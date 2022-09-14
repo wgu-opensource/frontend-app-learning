@@ -77,6 +77,17 @@ const Course = ({
     ));
   }, [sequenceId]);
 
+  useEffect(() => {
+    const celebrateFirstSection = celebrations && celebrations.firstSection;
+    setFirstSectionCelebrationOpen(shouldCelebrateOnSectionLoad(
+      courseId,
+      sequenceId,
+      celebrateFirstSection,
+      dispatch,
+      celebrations,
+    ));
+  }, [sequenceId]);
+
   return (
     <SidebarProvider courseId={courseId} unitId={unitId}>
       <Helmet>
