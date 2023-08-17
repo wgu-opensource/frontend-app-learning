@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/alerts/active-enteprise-alert/index.js"],"names":["useActiveEnterpriseAlert"],"mappings":";;;;;;;AAAA;;;;eAEeA,c","sourcesContent":["import useActiveEnterpriseAlert from './hooks';\n\nexport default useActiveEnterpriseAlert;\n"],"file":"index.js"}

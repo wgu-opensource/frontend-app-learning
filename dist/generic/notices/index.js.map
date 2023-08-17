@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/generic/notices/index.js"],"names":[],"mappings":";;;;;;;;;;;;AAAA","sourcesContent":["export { default } from './NoticesProvider';\n"],"file":"index.js"}

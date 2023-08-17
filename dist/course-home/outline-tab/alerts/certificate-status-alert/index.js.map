@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../src/course-home/outline-tab/alerts/certificate-status-alert/index.js"],"names":[],"mappings":";;;;;;;;;;;;AAAA","sourcesContent":["export { default } from './hooks';\n"],"file":"index.js"}

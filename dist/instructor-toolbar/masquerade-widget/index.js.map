@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/instructor-toolbar/masquerade-widget/index.js"],"names":["MasqueradeWidget"],"mappings":";;;;;;;AAAA;;;;eAEeA,yB","sourcesContent":["import MasqueradeWidget from './MasqueradeWidget';\n\nexport default MasqueradeWidget;\n"],"file":"index.js"}

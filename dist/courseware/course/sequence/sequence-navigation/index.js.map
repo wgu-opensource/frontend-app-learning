@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../src/courseware/course/sequence/sequence-navigation/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;AAAA;;AACA","sourcesContent":["export { default as SequenceNavigation } from './SequenceNavigation';\nexport { default as UnitNavigation } from './UnitNavigation';\n"],"file":"index.js"}

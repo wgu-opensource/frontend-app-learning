@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/alerts/logistration-alert/index.js"],"names":[],"mappings":";;;;;;;;;;;;AAAA","sourcesContent":["export { useLogistrationAlert as default } from './hooks';\n"],"file":"index.js"}

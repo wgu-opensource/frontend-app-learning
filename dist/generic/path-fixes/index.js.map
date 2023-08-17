@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/generic/path-fixes/index.js"],"names":[],"mappings":";;;;;;;;;;;;AAAA","sourcesContent":["export { default } from './PathFixesProvider';\n"],"file":"index.js"}

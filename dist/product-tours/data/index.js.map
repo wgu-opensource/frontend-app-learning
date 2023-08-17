@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/product-tours/data/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;;AAOA","sourcesContent":["export {\n  closeNewUserCourseHomeModal,\n  endCourseHomeTour,\n  endCoursewareTour,\n  fetchTourData,\n} from './thunks';\n\nexport { reducer } from './slice';\n"],"file":"index.js"}

@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../../src/courseware/course/sidebar/sidebars/discussions/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA;;AACA","sourcesContent":["export { default as Sidebar } from './DiscussionsSidebar';\nexport { default as Trigger, ID } from './DiscussionsTrigger';\n"],"file":"index.js"}

@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../src/courseware/data/__factories__/index.js"],"names":[],"mappings":";;AAAA;;AACA;;AACA;;AACA;;AACA","sourcesContent":["import './courseMetadata.factory';\nimport './sequenceMetadata.factory';\nimport './courseRecommendations.factory';\nimport './learningSequencesOutline.factory';\nimport './discussionTopics.factory';\n"],"file":"index.js"}

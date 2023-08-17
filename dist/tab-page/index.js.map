@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/tab-page/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;AAAA;;AACA","sourcesContent":["export { default as TabContainer } from './TabContainer';\nexport { default as TabPage } from './TabPage';\n"],"file":"index.js"}

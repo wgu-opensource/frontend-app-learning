@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/courseware/index.js"],"names":[],"mappings":";;;;;;;;;;;;AAAA","sourcesContent":["export { default } from './CoursewareContainer';\n"],"file":"index.js"}

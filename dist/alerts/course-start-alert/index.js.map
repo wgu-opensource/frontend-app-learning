@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/alerts/course-start-alert/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;AAAA","sourcesContent":["export { default, useCourseStartMasqueradeBanner } from './hooks';\n"],"file":"index.js"}

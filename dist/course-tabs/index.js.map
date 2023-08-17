@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/course-tabs/index.js"],"names":[],"mappings":";;;;;;;;;;;;AACA","sourcesContent":["/* eslint-disable import/prefer-default-export */\nexport { default as CourseTabsNavigation } from './CourseTabsNavigation';\n"],"file":"index.js"}

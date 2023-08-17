@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../src/courseware/course/course-exit/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;AAAA;;AACA","sourcesContent":["import CourseExit from './CourseExit';\nimport { getCourseExitNavigation } from './utils';\n\nexport { CourseExit, getCourseExitNavigation };\n"],"file":"index.js"}

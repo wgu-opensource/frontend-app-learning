@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../../src/courseware/course/sidebar/sidebars/notifications/index.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;AAAA;;AACA","sourcesContent":["export { default as Sidebar } from './NotificationTray';\nexport { default as Trigger, ID } from './NotificationTrigger';\n"],"file":"index.js"}

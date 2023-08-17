@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/course-home/goal-unsubscribe/index.jsx"],"names":["GoalUnsubscribe"],"mappings":";;;;;;;AAAA;;;;eAEeA,wB","sourcesContent":["import GoalUnsubscribe from './GoalUnsubscribe';\n\nexport default GoalUnsubscribe;\n"],"file":"index.js"}

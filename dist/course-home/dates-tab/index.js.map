@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../src/course-home/dates-tab/index.jsx"],"names":["DatesTab"],"mappings":";;;;;;;AAAA;;;;eAEeA,iB","sourcesContent":["import DatesTab from './DatesTab';\n\nexport default DatesTab;\n"],"file":"index.js"}

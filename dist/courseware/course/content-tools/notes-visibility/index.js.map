@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../../src/courseware/course/content-tools/notes-visibility/index.js"],"names":["NotesVisibility"],"mappings":";;;;;;;AAAA;;;;eAEeA,wB","sourcesContent":["import NotesVisibility from './NotesVisibility';\n\nexport default NotesVisibility;\n"],"file":"index.js"}
