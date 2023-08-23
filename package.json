@@ -55,8 +55,6 @@
     "patch-package": "^8.0.0",
     "prop-types": "15.8.1",
     "query-string": "^7.1.1",
-    "react": "16.14.0",
-    "react-dom": "16.14.0",
     "react-helmet": "6.1.0",
     "react-redux": "7.2.8",
     "react-router": "5.2.1",
@@ -80,6 +78,12 @@
     "es-check": "6.2.1",
     "husky": "7.0.4",
     "jest": "27.5.1",
+    "react": "16.14.0",
+    "react-dom": "16.14.0",
     "rosie": "2.1.0"
+  },
+  "peerDependencies": {
+    "react": "16.14.0",
+    "react-dom": "16.14.0"
   }
 }
