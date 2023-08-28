@@ -5,6 +5,14 @@ The purpose of this file is to document any changes done over upstream (https://
 ## 2023-08-28
 
 - Exported components required for using Sequence.
+- Moved the following dependencies in package.json to peerDependencies and devDependencies in order to avoid conflicts when used as a library:
+  - @edx/paragon
+  - prop-types
+  - react
+  - react-dom
+  - react-redux
+  - react-router-dom
+  - redux
 
 ## 2023-08-21
 
