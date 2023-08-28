@@ -6,7 +6,14 @@ import { reducer as recommendationsReducer } from './courseware/course/course-ex
 import { reducer as toursReducer } from './product-tours/data';
 import { reducer as modelsReducer } from './generic/model-store';
 import CourseLicense from './courseware/course/course-license';
-import { fetchCourse, fetchSequence } from './courseware/data';
+import {
+  fetchCourse,
+  fetchSequence,
+  checkBlockCompletion,
+  saveSequencePosition,
+  getResumeBlock,
+  getSequenceForUnitDeprecated,
+} from './courseware/data';
 
 export {
   Sequence,
@@ -19,4 +26,8 @@ export {
   CourseLicense,
   fetchCourse,
   fetchSequence,
+  checkBlockCompletion,
+  saveSequencePosition,
+  getResumeBlock,
+  getSequenceForUnitDeprecated,
 };

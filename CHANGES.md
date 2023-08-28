@@ -2,7 +2,11 @@
 
 The purpose of this file is to document any changes done over upstream (https://github.com/openedx/frontend-app-learning).
 
-## 2023-08-31
+## 2023-08-28
+
+- Exported components required for using Sequence.
+
+## 2023-08-21
 
 - Added `.github/pull_request_template.md`.
 
