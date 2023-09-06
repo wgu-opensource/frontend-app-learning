@@ -63,6 +63,12 @@ Object.defineProperty(exports, "getSequenceForUnitDeprecated", {
     return _data2.getSequenceForUnitDeprecated;
   }
 });
+Object.defineProperty(exports, "messages", {
+  enumerable: true,
+  get: function () {
+    return _i18n.default;
+  }
+});
 Object.defineProperty(exports, "modelsReducer", {
   enumerable: true,
   get: function () {
@@ -87,6 +93,8 @@ var _modelStore = require("./generic/model-store");
 var _data2 = require("./courseware/data");
 
 var _utils = require("./utils");
+
+var _i18n = _interopRequireDefault(require("./i18n"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 //# sourceMappingURL=exports.js.map
