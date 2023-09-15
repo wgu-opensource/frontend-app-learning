@@ -63,6 +63,12 @@ Object.defineProperty(exports, "getSequenceForUnitDeprecated", {
     return _data2.getSequenceForUnitDeprecated;
   }
 });
+Object.defineProperty(exports, "getSequenceMetadata", {
+  enumerable: true,
+  get: function () {
+    return _api.getSequenceMetadata;
+  }
+});
 Object.defineProperty(exports, "messages", {
   enumerable: true,
   get: function () {
@@ -81,6 +87,18 @@ Object.defineProperty(exports, "saveSequencePosition", {
     return _data2.saveSequencePosition;
   }
 });
+Object.defineProperty(exports, "updateModel", {
+  enumerable: true,
+  get: function () {
+    return _modelStore.updateModel;
+  }
+});
+Object.defineProperty(exports, "updateModels", {
+  enumerable: true,
+  get: function () {
+    return _modelStore.updateModels;
+  }
+});
 
 var _sequence = _interopRequireDefault(require("./courseware/course/sequence"));
 
@@ -91,6 +109,8 @@ var _slice = require("./courseware/data/slice");
 var _modelStore = require("./generic/model-store");
 
 var _data2 = require("./courseware/data");
+
+var _api = require("./courseware/data/api");
 
 var _utils = require("./utils");
 
