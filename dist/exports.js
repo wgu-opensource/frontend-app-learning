@@ -9,6 +9,12 @@ Object.defineProperty(exports, "Sequence", {
     return _sequence.default;
   }
 });
+Object.defineProperty(exports, "UserMessagesProvider", {
+  enumerable: true,
+  get: function () {
+    return _userMessages.UserMessagesProvider;
+  }
+});
 Object.defineProperty(exports, "appendBrowserTimezoneToUrl", {
   enumerable: true,
   get: function () {
@@ -115,6 +121,8 @@ var _api = require("./courseware/data/api");
 var _utils = require("./utils");
 
 var _i18n = _interopRequireDefault(require("./i18n"));
+
+var _userMessages = require("./generic/user-messages");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 //# sourceMappingURL=exports.js.map
