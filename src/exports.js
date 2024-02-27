@@ -13,7 +13,7 @@ import {
 import { getSequenceMetadata } from './courseware/data/api';
 import { executeThunk, appendBrowserTimezoneToUrl } from './utils';
 import messages from './i18n';
-import { UserMessagesProvider } from './generic/user-messages';
+import UserMessagesProvider from './generic/user-messages/UserMessagesProvider';
 
 export {
   Sequence,
