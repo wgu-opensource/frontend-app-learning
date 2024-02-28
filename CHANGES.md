@@ -2,6 +2,10 @@
 
 The purpose of this file is to document any changes done over upstream (https://github.com/openedx/frontend-app-learning).
 
+## 2024-02-28
+
+- Exported AlertList
+
 ## 2024-02-26
 
 - Exported UserMessagesProvider
@@ -9,7 +13,7 @@ The purpose of this file is to document any changes done over upstream (https://
 ## 2023-09-15
 
 - Exported getSequenceMetadata
-- Exported  updateModels
+- Exported updateModels
 - Exported updateModel
 
 ## 2023-09-06
