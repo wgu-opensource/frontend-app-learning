@@ -5,6 +5,7 @@ import {
   reducer as modelsReducer,
   updateModels,
   updateModel,
+  useModel,
 } from './generic/model-store';
 import {
   fetchCourse,
@@ -19,6 +20,8 @@ import { executeThunk, appendBrowserTimezoneToUrl } from './utils';
 import messages from './i18n';
 import UserMessagesProvider from './generic/user-messages/UserMessagesProvider';
 import AlertList from './generic/user-messages/AlertList';
+import DecodePageRoute from './decode-page-route';
+import withParamsAndNavigation from './courseware/utils';
 
 export {
   AlertList,
@@ -38,5 +41,8 @@ export {
   UserMessagesProvider,
   updateModel,
   updateModels,
+  useModel,
   getSequenceMetadata,
+  DecodePageRoute,
+  withParamsAndNavigation,
 };
