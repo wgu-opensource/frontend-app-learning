@@ -5,6 +5,7 @@ import {
   reducer as modelsReducer,
   updateModels,
   updateModel,
+  useModel,
 } from './generic/model-store';
 import {
   fetchCourse,
@@ -38,5 +39,6 @@ export {
   UserMessagesProvider,
   updateModel,
   updateModels,
+  useModel,
   getSequenceMetadata,
 };
