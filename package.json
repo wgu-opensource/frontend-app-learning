@@ -18,7 +18,7 @@
     "extends @edx/browserslist-config"
   ],
   "scripts": {
-    "build": "fedx-scripts webpack",
+    "build": "export SET NODE_OPTIONS=--openssl-legacy-provider && fedx-scripts webpack",
     "postinstall": "patch-package",
     "i18n_extract": "BABEL_ENV=i18n fedx-scripts babel src --quiet > /dev/null",
     "lint": "fedx-scripts eslint --ext .js --ext .jsx .",
