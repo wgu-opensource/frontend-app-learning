@@ -2,6 +2,10 @@
 
 The purpose of this file is to document any changes done over upstream (https://github.com/openedx/frontend-app-learning).
 
+## 2024-03-22
+
+- Exported UseModel
+
 ## 2024-02-28
 
 - Exported AlertList
