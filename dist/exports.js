@@ -111,6 +111,12 @@ Object.defineProperty(exports, "updateModels", {
     return _modelStore.updateModels;
   }
 });
+Object.defineProperty(exports, "useModel", {
+  enumerable: true,
+  get: function () {
+    return _modelStore.useModel;
+  }
+});
 
 var _sequence = _interopRequireDefault(require("./courseware/course/sequence"));
 
