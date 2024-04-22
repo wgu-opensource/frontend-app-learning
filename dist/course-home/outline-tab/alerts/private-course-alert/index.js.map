@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","names":["_hooks","require"],"sources":["../../../../../src/course-home/outline-tab/alerts/private-course-alert/index.js"],"sourcesContent":["export { usePrivateCourseAlert as default } from './hooks';\n"],"mappings":";;;;;;;;;;;AAAA,IAAAA,MAAA,GAAAC,OAAA"}

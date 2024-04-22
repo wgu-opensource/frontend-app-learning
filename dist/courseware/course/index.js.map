@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","names":["_Course","_interopRequireDefault","require","obj","__esModule","default"],"sources":["../../../src/courseware/course/index.js"],"sourcesContent":["export { default } from './Course';\n"],"mappings":";;;;;;;;;;;AAAA,IAAAA,OAAA,GAAAC,sBAAA,CAAAC,OAAA;AAAmC,SAAAD,uBAAAE,GAAA,WAAAA,GAAA,IAAAA,GAAA,CAAAC,UAAA,GAAAD,GAAA,KAAAE,OAAA,EAAAF,GAAA"}

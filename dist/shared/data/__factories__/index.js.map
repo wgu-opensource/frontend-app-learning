@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","names":["require"],"sources":["../../../../src/shared/data/__factories__/index.js"],"sourcesContent":["import './block.factory';\nimport './courseBlocks.factory';\nimport './courseMetadataBase.factory';\nimport './tab.factory';\n"],"mappings":";;AAAAA,OAAA;AACAA,OAAA;AACAA,OAAA;AACAA,OAAA"}
