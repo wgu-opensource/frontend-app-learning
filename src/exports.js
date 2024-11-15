@@ -20,6 +20,7 @@ import { executeThunk, appendBrowserTimezoneToUrl } from './utils';
 import messages from './i18n';
 import UserMessagesProvider from './generic/user-messages/UserMessagesProvider';
 import AlertList from './generic/user-messages/AlertList';
+import DecodePageRoute from './decode-page-route';
 
 export {
   AlertList,
@@ -41,4 +42,5 @@ export {
   updateModels,
   useModel,
   getSequenceMetadata,
+  DecodePageRoute,
 };
