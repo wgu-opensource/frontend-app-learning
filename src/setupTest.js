@@ -13,13 +13,14 @@ import PropTypes from 'prop-types';
 import { render as rtlRender } from '@testing-library/react';
 import { configureStore } from '@reduxjs/toolkit';
 import MockAdapter from 'axios-mock-adapter';
+import { reducer as learningAssistantReducer } from '@edx/frontend-lib-learning-assistant';
 import AppProvider from '@edx/frontend-platform/react/AppProvider';
 import { reducer as courseHomeReducer } from './course-home/data';
 import { reducer as coursewareReducer } from './courseware/data/slice';
 import { reducer as modelsReducer } from './generic/model-store';
 import { UserMessagesProvider } from './generic/user-messages';
 
-import appMessages from './i18n';
+import messages from './i18n';
 import { fetchCourse, fetchSequence } from './courseware/data';
 import { appendBrowserTimezoneToUrl, executeThunk } from './utils';
 import buildSimpleCourseAndSequenceMetadata from './courseware/data/__factories__/sequenceMetadata.factory';
@@ -78,7 +79,7 @@ export function initializeMockApp() {
   configureI18n({
     config: getConfig(),
     loggingService,
-    messages: [appMessages],
+    messages,
   });
 
   return { loggingService, authService };
@@ -116,6 +117,7 @@ export async function initializeTestStore(options = {}, overrideStore = true) {
       models: modelsReducer,
       courseware: coursewareReducer,
       courseHome: courseHomeReducer,
+      learningAssistant: learningAssistantReducer,
     },
   });
   if (overrideStore) {
@@ -167,13 +169,14 @@ function render(
   ui,
   {
     store = null,
+    wrapWithRouter = false,
     ...renderOptions
   } = {},
 ) {
   const Wrapper = ({ children }) => (
     // eslint-disable-next-line react/jsx-filename-extension
     <IntlProvider locale="en">
-      <AppProvider store={store || globalStore}>
+      <AppProvider store={store || globalStore} wrapWithRouter={wrapWithRouter}>
         <UserMessagesProvider>
           {children}
         </UserMessagesProvider>
