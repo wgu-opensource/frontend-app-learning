@@ -2,6 +2,10 @@
 
 The purpose of this file is to document any changes done over upstream (https://github.com/openedx/frontend-app-learning).
 
+## 2024-11-19
+
+- Exported withParamsAndNavigation
+
 ## 2024-11-15
 
 - Updated to Quince based on open-release/quince.3 tag from upstream
