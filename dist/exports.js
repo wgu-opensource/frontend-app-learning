@@ -123,6 +123,12 @@ Object.defineProperty(exports, "useModel", {
     return _modelStore.useModel;
   }
 });
+Object.defineProperty(exports, "withParamsAndNavigation", {
+  enumerable: true,
+  get: function () {
+    return _utils2.default;
+  }
+});
 var _sequence = _interopRequireDefault(require("./courseware/course/sequence"));
 var _data = require("./course-home/data");
 var _slice = require("./courseware/data/slice");
@@ -134,5 +140,6 @@ var _i18n = _interopRequireDefault(require("./i18n"));
 var _UserMessagesProvider = _interopRequireDefault(require("./generic/user-messages/UserMessagesProvider"));
 var _AlertList = _interopRequireDefault(require("./generic/user-messages/AlertList"));
 var _decodePageRoute = _interopRequireDefault(require("./decode-page-route"));
+var _utils2 = _interopRequireDefault(require("./courseware/utils"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 //# sourceMappingURL=exports.js.map
