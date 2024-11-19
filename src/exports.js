@@ -21,6 +21,7 @@ import messages from './i18n';
 import UserMessagesProvider from './generic/user-messages/UserMessagesProvider';
 import AlertList from './generic/user-messages/AlertList';
 import DecodePageRoute from './decode-page-route';
+import withParamsAndNavigation from './courseware/utils';
 
 export {
   AlertList,
@@ -43,4 +44,5 @@ export {
   useModel,
   getSequenceMetadata,
   DecodePageRoute,
+  withParamsAndNavigation,
 };
