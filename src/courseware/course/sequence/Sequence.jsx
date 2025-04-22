@@ -1,25 +1,28 @@
 /* eslint-disable no-use-before-define */
-import React, {
-  useEffect, useState,
-} from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
+
 import {
   sendTrackEvent,
   sendTrackingLogEvent,
 } from '@edx/frontend-platform/analytics';
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
+import { useIntl } from '@edx/frontend-platform/i18n';
 import { useSelector } from 'react-redux';
 import SequenceExamWrapper from '@edx/frontend-lib-special-exams';
-import { breakpoints, useWindowSize } from '@edx/paragon';
 
-import PageLoading from '../../../generic/PageLoading';
-import { useModel } from '../../../generic/model-store';
-import { useSequenceBannerTextAlert, useSequenceEntranceExamAlert } from '../../../alerts/sequence-alerts/hooks';
+import PageLoading from '@src/generic/PageLoading';
+import { useModel } from '@src/generic/model-store';
+import { useSequenceBannerTextAlert, useSequenceEntranceExamAlert } from '@src/alerts/sequence-alerts/hooks';
+import SequenceContainerSlot from '../../../plugin-slots/SequenceContainerSlot';
 
+import { getCoursewareOutlineSidebarSettings } from '../../data/selectors';
 import CourseLicense from '../course-license';
 import Sidebar from '../sidebar/Sidebar';
-import SidebarTriggers from '../sidebar/SidebarTriggers';
+import NewSidebar from '../new-sidebar/Sidebar';
+import {
+  Trigger as CourseOutlineTrigger,
+  Sidebar as CourseOutlineTray,
+} from '../sidebar/sidebars/course-outline';
 import messages from './messages';
 import HiddenAfterDue from './hidden-after-due';
 import { SequenceNavigation, UnitNavigation } from './sequence-navigation';
@@ -32,35 +35,39 @@ const Sequence = ({
   unitNavigationHandler,
   nextSequenceHandler,
   previousSequenceHandler,
-  intl,
 }) => {
-  const course = useModel('coursewareMeta', courseId);
+  const intl = useIntl();
+  const {
+    canAccessProctoredExams,
+    license,
+  } = useModel('coursewareMeta', courseId);
   const {
     isStaff,
     originalUserIsStaff,
+    isNewDiscussionSidebarViewEnabled,
   } = useModel('courseHomeMeta', courseId);
   const sequence = useModel('sequences', sequenceId);
   const unit = useModel('units', unitId);
   const sequenceStatus = useSelector(state => state.courseware.sequenceStatus);
   const sequenceMightBeUnit = useSelector(state => state.courseware.sequenceMightBeUnit);
-  const shouldDisplayNotificationTriggerInSequence = useWindowSize().width < breakpoints.small.minWidth;
+  const { enableNavigationSidebar: isEnabledOutlineSidebar } = useSelector(getCoursewareOutlineSidebarSettings);
 
   const handleNext = () => {
     const nextIndex = sequence.unitIds.indexOf(unitId) + 1;
-    if (nextIndex < sequence.unitIds.length) {
-      const newUnitId = sequence.unitIds[nextIndex];
-      handleNavigate(newUnitId);
-    } else {
+    const newUnitId = sequence.unitIds[nextIndex];
+    handleNavigate(newUnitId);
+
+    if (nextIndex >= sequence.unitIds.length) {
       nextSequenceHandler();
     }
   };
 
   const handlePrevious = () => {
     const previousIndex = sequence.unitIds.indexOf(unitId) - 1;
-    if (previousIndex >= 0) {
-      const newUnitId = sequence.unitIds[previousIndex];
-      handleNavigate(newUnitId);
-    } else {
+    const newUnitId = sequence.unitIds[previousIndex];
+    handleNavigate(newUnitId);
+
+    if (previousIndex < 0) {
       previousSequenceHandler();
     }
   };
@@ -139,56 +146,64 @@ const Sequence = ({
 
   const gated = sequence && sequence.gatedContent !== undefined && sequence.gatedContent.gated;
 
-  const defaultContent = (
-    <div className="sequence-container d-inline-flex flex-row w-100">
-      <div className={classNames('sequence w-100', { 'position-relative': shouldDisplayNotificationTriggerInSequence })}>
-        <div className="sequence-navigation-container">
-          <SequenceNavigation
-            sequenceId={sequenceId}
-            unitId={unitId}
-            className="mb-4"
-            nextHandler={() => {
-              logEvent('edx.ui.lms.sequence.next_selected', 'top');
-              handleNext();
-            }}
-            onNavigate={(destinationUnitId) => {
-              logEvent('edx.ui.lms.sequence.tab_selected', 'top', destinationUnitId);
-              handleNavigate(destinationUnitId);
-            }}
-            previousHandler={() => {
-              logEvent('edx.ui.lms.sequence.previous_selected', 'top');
-              handlePrevious();
-            }}
-          />
-          {shouldDisplayNotificationTriggerInSequence && <SidebarTriggers />}
-        </div>
+  const renderUnitNavigation = (isAtTop) => (
+    <UnitNavigation
+      sequenceId={sequenceId}
+      unitId={unitId}
+      isAtTop={isAtTop}
+      onClickPrevious={() => {
+        logEvent('edx.ui.lms.sequence.previous_selected', 'bottom');
+        handlePrevious();
+      }}
+      onClickNext={() => {
+        logEvent('edx.ui.lms.sequence.next_selected', 'bottom');
+        handleNext();
+      }}
+    />
+  );
 
-        <div className="unit-container flex-grow-1">
-          <SequenceContent
-            courseId={courseId}
-            gated={gated}
-            sequenceId={sequenceId}
-            unitId={unitId}
-            unitLoadedHandler={handleUnitLoaded}
-          />
-          {unitHasLoaded && (
-          <UnitNavigation
-            sequenceId={sequenceId}
-            unitId={unitId}
-            onClickPrevious={() => {
-              logEvent('edx.ui.lms.sequence.previous_selected', 'bottom');
-              handlePrevious();
-            }}
-            onClickNext={() => {
-              logEvent('edx.ui.lms.sequence.next_selected', 'bottom');
-              handleNext();
-            }}
-          />
+  const defaultContent = (
+    <>
+      <div className="sequence-container d-inline-flex flex-row w-100">
+        <CourseOutlineTrigger />
+        <CourseOutlineTray />
+        <div className="sequence w-100">
+          {!isEnabledOutlineSidebar && (
+            <div className="sequence-navigation-container">
+              <SequenceNavigation
+                sequenceId={sequenceId}
+                unitId={unitId}
+                nextHandler={() => {
+                  logEvent('edx.ui.lms.sequence.next_selected', 'top');
+                  handleNext();
+                }}
+                onNavigate={(destinationUnitId) => {
+                  logEvent('edx.ui.lms.sequence.tab_selected', 'top', destinationUnitId);
+                  handleNavigate(destinationUnitId);
+                }}
+                previousHandler={() => {
+                  logEvent('edx.ui.lms.sequence.previous_selected', 'top');
+                  handlePrevious();
+                }}
+              />
+            </div>
           )}
+
+          <div className="unit-container flex-grow-1 pt-4">
+            <SequenceContent
+              courseId={courseId}
+              gated={gated}
+              sequenceId={sequenceId}
+              unitId={unitId}
+              unitLoadedHandler={handleUnitLoaded}
+            />
+            {unitHasLoaded && renderUnitNavigation(false)}
+          </div>
         </div>
+        {isNewDiscussionSidebarViewEnabled ? <NewSidebar /> : <Sidebar />}
       </div>
-      <Sidebar />
-    </div>
+      <SequenceContainerSlot courseId={courseId} unitId={unitId} />
+    </>
   );
 
   if (sequenceStatus === 'loaded') {
@@ -199,11 +214,12 @@ const Sequence = ({
           courseId={courseId}
           isStaff={isStaff}
           originalUserIsStaff={originalUserIsStaff}
-          canAccessProctoredExams={course.canAccessProctoredExams}
+          canAccessProctoredExams={canAccessProctoredExams}
         >
+          {isEnabledOutlineSidebar && renderUnitNavigation(true)}
           {defaultContent}
         </SequenceExamWrapper>
-        <CourseLicense license={course.license || undefined} />
+        <CourseLicense license={license || undefined} />
       </div>
     );
   }
@@ -223,7 +239,6 @@ Sequence.propTypes = {
   unitNavigationHandler: PropTypes.func.isRequired,
   nextSequenceHandler: PropTypes.func.isRequired,
   previousSequenceHandler: PropTypes.func.isRequired,
-  intl: intlShape.isRequired,
 };
 
 Sequence.defaultProps = {
@@ -231,4 +246,4 @@ Sequence.defaultProps = {
   unitId: null,
 };
 
-export default injectIntl(Sequence);
+export default Sequence;

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { useWindowSize } from '@edx/paragon';
+import { useWindowSize } from '@openedx/paragon';
 
 const invisibleStyle = {
   position: 'absolute',
@@ -30,7 +30,7 @@ const invisibleStyle = {
  *    included when determining which children will fit or not. Usage of this ref
  *    is optional.
  */
-export default function useIndexOfLastVisibleChild() {
+export default function useIndexOfLastVisibleChild(isSidebarOpen) {
   const containerElementRef = useRef(null);
   const overflowElementRef = useRef(null);
   const containingRectRef = useRef({});
@@ -72,7 +72,7 @@ export default function useIndexOfLastVisibleChild() {
 
     setIndexOfLastVisibleChild(nextIndexOfLastVisibleChild);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [windowSize, containerElementRef.current]);
+  }, [windowSize, containerElementRef.current, isSidebarOpen]);
 
   return [indexOfLastVisibleChild, containerElementRef, invisibleStyle, overflowElementRef];
 }

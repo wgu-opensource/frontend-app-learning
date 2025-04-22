@@ -1,18 +1,19 @@
 import { ensureConfig, getConfig } from '@edx/frontend-platform';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
-import { Icon } from '@edx/paragon';
-import { QuestionAnswer } from '@edx/paragon/icons';
+import { Icon } from '@openedx/paragon';
+import { QuestionAnswer } from '@openedx/paragon/icons';
 import PropTypes from 'prop-types';
-import React, { useContext, useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
-import { useModel } from '../../../../../generic/model-store';
+import { useModel } from '@src/generic/model-store';
+import { WIDGETS } from '@src/constants';
 import { getCourseDiscussionTopics } from '../../../../data/thunks';
 import SidebarTriggerBase from '../../common/TriggerBase';
 import SidebarContext from '../../SidebarContext';
 import messages from './messages';
 
 ensureConfig(['DISCUSSIONS_MFE_BASE_URL']);
-export const ID = 'DISCUSSIONS';
+export const ID = WIDGETS.DISCUSSIONS;
 
 const DiscussionsTrigger = ({
   intl,

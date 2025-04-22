@@ -88,6 +88,7 @@ describe('CoursewareContainer', () => {
           <Routes>
             {DECODE_ROUTES.COURSEWARE.map((route) => (
               <Route
+                key={route}
                 path={route}
                 element={<CoursewareContainer />}
               />
@@ -514,6 +515,13 @@ describe('CoursewareContainer', () => {
 
       const startDate = '2/5/2013'; // This date is based on our courseMetadata factory's sample data.
       expect(global.location.href).toEqual(`http://localhost/redirect/dashboard?notlive=${startDate}`);
+    });
+
+    it('should go to the enterprise learner dashboard for a course_not_started_enterprise_learner error code', async () => {
+      setUpWithDeniedStatus('course_not_started_enterprise_learner');
+      await loadContainer();
+
+      expect(global.location.href).toEqual('http://localhost/redirect/enterprise-learner-dashboard');
     });
   });
 });

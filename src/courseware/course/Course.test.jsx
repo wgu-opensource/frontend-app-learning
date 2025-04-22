@@ -1,24 +1,30 @@
 import React from 'react';
+
 import { Factory } from 'rosie';
-import { getConfig } from '@edx/frontend-platform';
-import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
-import MockAdapter from 'axios-mock-adapter';
-import { breakpoints } from '@edx/paragon';
+
+import { breakpoints } from '@openedx/paragon';
+
 import {
-  act, fireEvent, getByRole, initializeTestStore, loadUnit, render, screen, waitFor,
+  fireEvent, getByRole, initializeTestStore, loadUnit, render, screen, waitFor,
 } from '../../setupTest';
-import { buildTopicsFromUnits } from '../data/__factories__/discussionTopics.factory';
-import { handleNextSectionCelebration } from './celebration';
 import * as celebrationUtils from './celebration/utils';
+import { handleNextSectionCelebration } from './celebration';
 import Course from './Course';
-import { executeThunk } from '../../utils';
-import * as thunks from '../data/thunks';
+import setupDiscussionSidebar from './test-utils';
 
 jest.mock('@edx/frontend-platform/analytics');
 jest.mock('@edx/frontend-lib-special-exams/dist/data/thunks.js', () => ({
   ...jest.requireActual('@edx/frontend-lib-special-exams/dist/data/thunks.js'),
   checkExamEntry: () => jest.fn(),
 }));
+const mockChatTestId = 'fake-chat';
+jest.mock(
+  './chat/Chat',
+  // eslint-disable-next-line react/prop-types
+  () => function ({ courseId }) {
+    return <div className="fake-chat" data-testid={mockChatTestId}>Chat contents {courseId} </div>;
+  },
+);
 
 const recordFirstSectionCelebration = jest.fn();
 // eslint-disable-next-line no-import-assign
@@ -43,8 +49,6 @@ describe('Course', () => {
       sequenceId,
       unitId: Object.values(models.units)[0].id,
     });
-    getItemSpy = jest.spyOn(Object.getPrototypeOf(window.sessionStorage), 'getItem');
-    setItemSpy = jest.spyOn(Object.getPrototypeOf(window.sessionStorage), 'setItem');
     global.innerWidth = breakpoints.extraLarge.minWidth;
   });
 
@@ -53,28 +57,9 @@ describe('Course', () => {
     setItemSpy.mockRestore();
   });
 
-  const setupDiscussionSidebar = async () => {
-    const testStore = await initializeTestStore({ provider: 'openedx' });
-    const state = testStore.getState();
-    const { courseware: { courseId } } = state;
-    const axiosMock = new MockAdapter(getAuthenticatedHttpClient());
-    axiosMock.onGet(`${getConfig().LMS_BASE_URL}/api/discussion/v1/courses/${courseId}`).reply(200, { provider: 'openedx' });
-    const topicsResponse = buildTopicsFromUnits(state.models.units);
-    axiosMock.onGet(`${getConfig().LMS_BASE_URL}/api/discussion/v2/course_topics/${courseId}`)
-      .reply(200, topicsResponse);
-
-    await executeThunk(thunks.getCourseDiscussionTopics(courseId), testStore.dispatch);
-    const [firstUnitId] = Object.keys(state.models.units);
-    mockData.unitId = firstUnitId;
-    const [firstSequenceId] = Object.keys(state.models.sequences);
-    mockData.sequenceId = firstSequenceId;
-
-    await render(<Course {...mockData} />, { store: testStore, wrapWithRouter: true });
-  };
-
   it('loads learning sequence', async () => {
     render(<Course {...mockData} />, { wrapWithRouter: true });
-    expect(screen.getByRole('navigation', { name: 'breadcrumb' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'breadcrumb' })).not.toBeInTheDocument();
     expect(await screen.findByText('Loading learning sequence...')).toBeInTheDocument();
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -91,6 +76,27 @@ describe('Course', () => {
     expect(document.title).toMatch(
       `${sequence.title} | ${section.title} | ${course.title} | edX`,
     );
+  });
+
+  it('removes breadcrumbs when navigation is disabled', async () => {
+    const sequenceBlocks = [Factory.build(
+      'block',
+      { type: 'sequential', children: [] },
+      { courseId: mockData.courseId },
+    )];
+    const sequenceMetadata = [Factory.build(
+      'sequenceMetadata',
+      { navigation_disabled: true },
+      { courseId: mockData.courseId, sequenceBlock: sequenceBlocks[0] },
+    )];
+    const testStore = await initializeTestStore({ sequenceBlocks, sequenceMetadata }, false);
+    const testData = {
+      ...mockData,
+      sequenceId: sequenceBlocks[0].id,
+      onNavigate: jest.fn(),
+    };
+    render(<Course {...testData} />, { store: testStore, wrapWithRouter: true });
+    expect(screen.queryByRole('navigation', { name: 'breadcrumb' })).not.toBeInTheDocument();
   });
 
   it('displays first section celebration modal', async () => {
@@ -136,27 +142,32 @@ describe('Course', () => {
 
     const notificationTrigger = screen.getByRole('button', { name: /Show notification tray/i });
     expect(notificationTrigger).toBeInTheDocument();
-    expect(notificationTrigger.parentNode).toHaveClass('mt-3');
+    expect(notificationTrigger.parentNode).not.toHaveClass('sidebar-active', { exact: true });
     fireEvent.click(notificationTrigger);
-    expect(notificationTrigger.parentNode).not.toHaveClass('mt-3', { exact: true });
+    expect(notificationTrigger.parentNode).toHaveClass('sidebar-active');
   });
 
   it('handles click to open/close discussions sidebar', async () => {
     await setupDiscussionSidebar();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sidebar-DISCUSSIONS')).toBeInTheDocument();
+      expect(screen.getByTestId('sidebar-DISCUSSIONS')).not.toHaveClass('d-none');
+    });
+
     const discussionsTrigger = await screen.getByRole('button', { name: /Show discussions tray/i });
-    const discussionsSideBar = await waitFor(() => screen.findByTestId('sidebar-DISCUSSIONS'));
+    expect(discussionsTrigger).toBeInTheDocument();
+    fireEvent.click(discussionsTrigger);
 
-    expect(discussionsSideBar).not.toHaveClass('d-none');
-
-    await act(async () => {
-      fireEvent.click(discussionsTrigger);
+    await waitFor(() => {
+      expect(screen.queryByTestId('sidebar-DISCUSSIONS')).not.toBeInTheDocument();
     });
-    await expect(discussionsSideBar).toHaveClass('d-none');
 
-    await act(async () => {
-      fireEvent.click(discussionsTrigger);
+    fireEvent.click(discussionsTrigger);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('sidebar-DISCUSSIONS')).toBeInTheDocument();
     });
-    await expect(discussionsSideBar).not.toHaveClass('d-none');
   });
 
   it('displays discussions sidebar when unit changes', async () => {
@@ -184,52 +195,12 @@ describe('Course', () => {
   });
 
   it('handles click to open/close notification tray', async () => {
-    sessionStorage.clear();
-    render(<Course {...mockData} />, { wrapWithRouter: true });
-    expect(sessionStorage.getItem(`notificationTrayStatus.${mockData.courseId}`)).toBe('"open"');
+    await setupDiscussionSidebar();
     const notificationShowButton = await screen.findByRole('button', { name: /Show notification tray/i });
-    expect(screen.queryByRole('region', { name: /notification tray/i })).toHaveClass('d-none');
+    expect(screen.queryByRole('region', { name: /notification tray/i })).not.toBeInTheDocument();
     fireEvent.click(notificationShowButton);
-    expect(sessionStorage.getItem(`notificationTrayStatus.${mockData.courseId}`)).toBe('"closed"');
+    expect(screen.queryByRole('region', { name: /notification tray/i })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: /notification tray/i })).not.toHaveClass('d-none');
-  });
-
-  it('handles reload persisting notification tray status', async () => {
-    sessionStorage.clear();
-    render(<Course {...mockData} />, { wrapWithRouter: true });
-    const notificationShowButton = await screen.findByRole('button', { name: /Show notification tray/i });
-    fireEvent.click(notificationShowButton);
-    expect(sessionStorage.getItem(`notificationTrayStatus.${mockData.courseId}`)).toBe('"closed"');
-
-    // Mock reload window, this doesn't happen in the Course component,
-    // calling the reload to check if the tray remains closed
-    const { location } = window;
-    delete window.location;
-    window.location = { reload: jest.fn() };
-    window.location.reload();
-    expect(window.location.reload).toHaveBeenCalled();
-    window.location = location;
-    expect(sessionStorage.getItem(`notificationTrayStatus.${mockData.courseId}`)).toBe('"closed"');
-    expect(screen.queryByTestId('NotificationTray')).not.toBeInTheDocument();
-  });
-
-  it('handles sessionStorage from a different course for the notification tray', async () => {
-    sessionStorage.clear();
-    const courseMetadataSecondCourse = Factory.build('courseMetadata', { id: 'second_course' });
-
-    // set sessionStorage for a different course before rendering Course
-    sessionStorage.setItem(`notificationTrayStatus.${courseMetadataSecondCourse.id}`, '"open"');
-
-    render(<Course {...mockData} />, { wrapWithRouter: true });
-    expect(sessionStorage.getItem(`notificationTrayStatus.${mockData.courseId}`)).toBe('"open"');
-    const notificationShowButton = await screen.findByRole('button', { name: /Show notification tray/i });
-    fireEvent.click(notificationShowButton);
-
-    // Verify sessionStorage was updated for the original course
-    expect(sessionStorage.getItem(`notificationTrayStatus.${mockData.courseId}`)).toBe('"closed"');
-
-    // Verify the second course sessionStorage was not changed
-    expect(sessionStorage.getItem(`notificationTrayStatus.${courseMetadataSecondCourse.id}`)).toBe('"open"');
   });
 
   it('renders course breadcrumbs as expected', async () => {
@@ -239,7 +210,9 @@ describe('Course', () => {
       { type: 'vertical' },
       { courseId: courseMetadata.id },
     ));
-    const testStore = await initializeTestStore({ courseMetadata, unitBlocks }, false);
+    const testStore = await initializeTestStore({
+      courseMetadata, unitBlocks, enableNavigationSidebar: { enable_navigation_sidebar: false },
+    }, false);
     const { courseware, models } = testStore.getState();
     const { courseId, sequenceId } = courseware;
     const testData = {
@@ -380,5 +353,42 @@ describe('Course', () => {
       render(<Course {...testData} />, { store: testStore, wrapWithRouter: true });
       await waitFor(() => expect(screen.getByText('To access course materials, you must score 70% or higher on this exam. Your current score is 30%.')).toBeInTheDocument());
     });
+  });
+
+  it('displays chat when screen is wide enough (browser)', async () => {
+    const courseMetadata = Factory.build('courseMetadata', {
+      learning_assistant_enabled: true,
+      enrollment: { mode: 'verified' },
+    });
+    const testStore = await initializeTestStore({ courseMetadata }, false);
+    const { courseware } = testStore.getState();
+    const { courseId, sequenceId } = courseware;
+    const testData = {
+      ...mockData,
+      courseId,
+      sequenceId,
+    };
+    render(<Course {...testData} />, { store: testStore, wrapWithRouter: true });
+    const chat = screen.queryByTestId(mockChatTestId);
+    await expect(chat).toBeInTheDocument();
+  });
+
+  it('does not display chat when screen is too narrow (mobile)', async () => {
+    global.innerWidth = breakpoints.extraSmall.minWidth;
+    const courseMetadata = Factory.build('courseMetadata', {
+      learning_assistant_enabled: true,
+      enrollment: { mode: 'verified' },
+    });
+    const testStore = await initializeTestStore({ courseMetadata }, false);
+    const { courseware } = testStore.getState();
+    const { courseId, sequenceId } = courseware;
+    const testData = {
+      ...mockData,
+      courseId,
+      sequenceId,
+    };
+    render(<Course {...testData} />, { store: testStore, wrapWithRouter: true });
+    const chat = screen.queryByTestId(mockChatTestId);
+    await expect(chat).not.toBeInTheDocument();
   });
 });

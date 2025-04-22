@@ -5,9 +5,9 @@ import { useDispatch } from 'react-redux';
 import { StrictDict, useKeyedState } from '@edx/react-unit-test-utils';
 import { logError } from '@edx/frontend-platform/logging';
 
-import { fetchCourse } from '../../../../data';
-import { processEvent } from '../../../../../course-home/data/thunks';
-import { useEventListener } from '../../../../../generic/hooks';
+import { fetchCourse } from '@src/courseware/data';
+import { processEvent } from '@src/course-home/data/thunks';
+import { useEventListener } from '@src/generic/hooks';
 import { messageTypes } from '../constants';
 
 import useLoadBearingHook from './useLoadBearingHook';
@@ -50,12 +50,6 @@ const useIFrameBehavior = ({
     if (type === messageTypes.resize) {
       setIframeHeight(payload.height);
 
-      // We observe exit from the video xblock fullscreen mode
-      // and scroll to the previously saved scroll position
-      if (windowTopOffset !== null) {
-        window.scrollTo(0, Number(windowTopOffset));
-      }
-
       if (!hasLoaded && iframeHeight === 0 && payload.height > 0) {
         setHasLoaded(true);
         if (onLoaded) {
@@ -63,6 +57,12 @@ const useIFrameBehavior = ({
         }
       }
     } else if (type === messageTypes.videoFullScreen) {
+      // We observe exit from the video xblock fullscreen mode
+      // and scroll to the previously saved scroll position
+      if (!payload.open && windowTopOffset !== null) {
+        window.scrollTo(0, Number(windowTopOffset));
+      }
+
       // We listen for this message from LMS to know when we need to
       // save or reset scroll position on toggle video xblock fullscreen mode
       setWindowTopOffset(payload.open ? window.scrollY : null);

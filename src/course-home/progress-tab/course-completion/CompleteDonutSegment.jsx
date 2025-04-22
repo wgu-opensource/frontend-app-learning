@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
-import { OverlayTrigger, Popover } from '@edx/paragon';
+import { OverlayTrigger, Popover } from '@openedx/paragon';
 
 import messages from './messages';
 
@@ -33,7 +33,7 @@ const CompleteDonutSegment = ({ completePercentage, intl, lockedPercentage }) =>
         show={showCompletePopover}
         placement="top"
         overlay={(
-          <Popover aria-hidden="true">
+          <Popover id="complete-content-tooltip-popover" aria-hidden="true">
             <Popover.Content>
               {intl.formatMessage(messages.completeContentTooltip)}
             </Popover.Content>

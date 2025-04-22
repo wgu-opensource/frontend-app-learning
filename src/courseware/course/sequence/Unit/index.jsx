@@ -4,7 +4,8 @@ import React from 'react';
 import { AppContext } from '@edx/frontend-platform/react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 
-import { useModel } from '../../../../generic/model-store';
+import { useModel } from '@src/generic/model-store';
+import { usePluginsCallback } from '@src/generic/plugin-store';
 
 import BookmarkButton from '../../bookmark/BookmarkButton';
 import messages from '../messages';
@@ -13,6 +14,7 @@ import UnitSuspense from './UnitSuspense';
 import { modelKeys, views } from './constants';
 import { useExamAccess, useShouldDisplayHonorCode } from './hooks';
 import { getIFrameUrl } from './urls';
+import UnitTitleSlot from '../../../../plugin-slots/UnitTitleSlot';
 
 const Unit = ({
   courseId,
@@ -28,16 +30,21 @@ const Unit = ({
   const isProcessing = unit.bookmarkedUpdateState === 'loading';
   const view = authenticatedUser ? views.student : views.public;
 
-  const iframeUrl = getIFrameUrl({
+  const getUrl = usePluginsCallback('getIFrameUrl', () => getIFrameUrl({
     id,
     view,
     format,
     examAccess,
-  });
+  }));
+
+  const iframeUrl = getUrl();
 
   return (
     <div className="unit">
-      <h1 className="mb-0 h3">{unit.title}</h1>
+      <div className="mb-0">
+        <h3 className="h3">{unit.title}</h3>
+        <UnitTitleSlot courseId={courseId} unitId={id} />
+      </div>
       <h2 className="sr-only">{formatMessage(messages.headerPlaceholder)}</h2>
       <BookmarkButton
         unitId={unit.id}

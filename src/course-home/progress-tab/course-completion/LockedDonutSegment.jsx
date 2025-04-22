@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { OverlayTrigger, Popover } from '@edx/paragon';
+import { OverlayTrigger, Popover } from '@openedx/paragon';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
 
 import messages from './messages';
@@ -36,7 +36,7 @@ const LockedDonutSegment = ({ intl, lockedPercentage }) => {
         show={showLockedPopover}
         placement="top"
         overlay={(
-          <Popover aria-hidden="true">
+          <Popover id="locked-tooltip-popover" aria-hidden="true">
             <Popover.Content>
               {intl.formatMessage(messages.lockedContentTooltip)}
             </Popover.Content>

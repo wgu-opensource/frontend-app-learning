@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { breakpoints, Button, useWindowSize } from '@edx/paragon';
-import { ChevronLeft, ChevronRight } from '@edx/paragon/icons';
+import { breakpoints, Button, useWindowSize } from '@openedx/paragon';
+import { ChevronLeft, ChevronRight } from '@openedx/paragon/icons';
 import classNames from 'classnames';
 import {
   injectIntl,
@@ -32,7 +32,12 @@ const SequenceNavigation = ({
 }) => {
   const sequence = useModel('sequences', sequenceId);
   const {
-    isFirstUnit, isLastUnit, nextLink, previousLink,
+    isFirstUnit,
+    isLastUnit,
+    nextLink,
+    previousLink,
+    navigationDisabledPrevSequence,
+    navigationDisabledNextSequence,
   } = useSequenceNavigationMetadata(sequenceId, unitId);
   const {
     courseId,
@@ -68,8 +73,7 @@ const SequenceNavigation = ({
   const renderPreviousButton = () => {
     const disabled = isFirstUnit;
     const prevArrow = isRtl(getLocale()) ? ChevronRight : ChevronLeft;
-
-    return (
+    return navigationDisabledPrevSequence || (
       <Button
         variant="link"
         className="previous-btn"
@@ -90,7 +94,7 @@ const SequenceNavigation = ({
     const disabled = isLastUnit && !exitActive;
     const nextArrow = isRtl(getLocale()) ? ChevronLeft : ChevronRight;
 
-    return (
+    return navigationDisabledNextSequence || (
       <Button
         variant="link"
         className="next-btn"
@@ -106,7 +110,7 @@ const SequenceNavigation = ({
   };
 
   return sequenceStatus === LOADED && (
-    <nav id="courseware-sequenceNavigation" className={classNames('sequence-navigation', className, { 'mr-2': shouldDisplayNotificationTriggerInSequence })}>
+    <nav id="courseware-sequence-navigation" data-testid="courseware-sequence-navigation" className={classNames('sequence-navigation', className, { 'mr-2': shouldDisplayNotificationTriggerInSequence })}>
       {renderPreviousButton()}
       {renderUnitButtons()}
       {renderNextButton()}

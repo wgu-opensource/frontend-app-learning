@@ -1,8 +1,7 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Factory } from 'rosie';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
-import { breakpoints } from '@edx/paragon';
+import { breakpoints } from '@openedx/paragon';
 import {
   loadUnit, render, screen, fireEvent, waitFor, initializeTestStore,
 } from '../../../setupTest';
@@ -18,12 +17,14 @@ jest.mock('@edx/frontend-lib-special-exams/dist/data/thunks.js', () => ({
 
 describe('Sequence', () => {
   let mockData;
+  let defaultContextValue;
   const courseMetadata = Factory.build('courseMetadata');
   const unitBlocks = Array.from({ length: 3 }).map(() => Factory.build(
     'block',
     { type: 'vertical' },
     { courseId: courseMetadata.id },
   ));
+  const enableNavigationSidebar = { enable_navigation_sidebar: false };
 
   beforeAll(async () => {
     const store = await initializeTestStore({ courseMetadata, unitBlocks });
@@ -38,11 +39,28 @@ describe('Sequence', () => {
       toggleNotificationTray: () => {},
       setNotificationStatus: () => {},
     };
+    defaultContextValue = { courseId: mockData.courseId, currentSidebar: null, toggleSidebar: jest.fn() };
   });
 
   beforeEach(() => {
     global.innerWidth = breakpoints.extraLarge.minWidth;
   });
+
+  const SidebarWrapper = ({ contextValue = defaultContextValue, overrideData = {} }) => (
+    <SidebarContext.Provider value={contextValue}>
+      <Sequence {...({ ...mockData, ...overrideData })} />
+    </SidebarContext.Provider>
+  );
+
+  SidebarWrapper.defaultProps = {
+    contextValue: defaultContextValue,
+    overrideData: {},
+  };
+
+  SidebarWrapper.propTypes = {
+    contextValue: PropTypes.shape({}),
+    overrideData: PropTypes.shape({}),
+  };
 
   it('renders correctly without data', async () => {
     const testStore = await initializeTestStore({ excludeFetchCourse: true, excludeFetchSequence: true }, false);
@@ -74,18 +92,22 @@ describe('Sequence', () => {
       { courseId: courseMetadata.id, unitBlocks, sequenceBlock: sequenceBlocks[0] },
     )];
     const testStore = await initializeTestStore({
-      courseMetadata, unitBlocks, sequenceBlocks, sequenceMetadata,
+      courseMetadata,
+      unitBlocks,
+      sequenceBlocks,
+      sequenceMetadata,
+      enableNavigationSidebar: { enable_navigation_sidebar: true },
     }, false);
     const { container } = render(
-      <Sequence {...mockData} {...{ sequenceId: sequenceBlocks[0].id }} />,
+      <SidebarWrapper overrideData={{ sequenceId: sequenceBlocks[0].id }} />,
       { store: testStore, wrapWithRouter: true },
     );
 
     await waitFor(() => expect(screen.queryByText('Loading locked content messaging...')).toBeInTheDocument());
     // `Previous`, `Prerequisite` and `Close Tray` buttons.
     expect(screen.getAllByRole('button').length).toEqual(3);
-    // `Active` and `Next` buttons.
-    expect(screen.getAllByRole('link').length).toEqual(2);
+    // `Next` button.
+    expect(screen.getAllByRole('link').length).toEqual(1);
 
     expect(screen.getByText('Content Locked')).toBeInTheDocument();
     const unitContainer = container.querySelector('.unit-container');
@@ -107,7 +129,7 @@ describe('Sequence', () => {
       { courseId: courseMetadata.id, unitBlocks, sequenceBlock: sequenceBlocks[0] },
     )];
     const testStore = await initializeTestStore({
-      courseMetadata, unitBlocks, sequenceBlocks, sequenceMetadata,
+      courseMetadata, unitBlocks, sequenceBlocks, sequenceMetadata, enableNavigationSidebar,
     }, false);
     render(
       <Sequence {...mockData} {...{ sequenceId: sequenceBlocks[0].id }} />,
@@ -134,18 +156,20 @@ describe('Sequence', () => {
   });
 
   it('handles loading unit', async () => {
-    render(<Sequence {...mockData} />, { wrapWithRouter: true });
+    render(<SidebarWrapper />, { wrapWithRouter: true });
     expect(await screen.findByText('Loading learning sequence...')).toBeInTheDocument();
-    // `Previous`, `Bookmark` and `Close Tray` buttons
+    // `Previous`, `Prerequisite` and `Close Tray` buttons.
     expect(screen.getAllByRole('button')).toHaveLength(3);
-    // Renders `Next` button plus one button for each unit.
-    expect(screen.getAllByRole('link')).toHaveLength(1 + unitBlocks.length);
+    // Renders `Next` button.
+    expect(screen.getAllByRole('link')).toHaveLength(1);
 
     loadUnit();
     await waitFor(() => expect(screen.queryByText('Loading learning sequence...')).not.toBeInTheDocument());
     // At this point there will be 2 `Previous` and 2 `Next` buttons.
     expect(screen.getAllByRole('button', { name: /previous/i }).length).toEqual(2);
     expect(screen.getAllByRole('link', { name: /next/i }).length).toEqual(2);
+    // Renders two `Next` buttons for top and bottom unit navigations.
+    expect(screen.getAllByRole('link')).toHaveLength(2);
   });
 
   describe('sequence and unit navigation buttons', () => {
@@ -161,7 +185,9 @@ describe('Sequence', () => {
     )];
 
     beforeAll(async () => {
-      testStore = await initializeTestStore({ courseMetadata, unitBlocks, sequenceBlocks }, false);
+      testStore = await initializeTestStore({
+        courseMetadata, unitBlocks, sequenceBlocks, enableNavigationSidebar,
+      }, false);
     });
 
     beforeEach(() => {
@@ -174,7 +200,7 @@ describe('Sequence', () => {
         sequenceId: sequenceBlocks[1].id,
         previousSequenceHandler: jest.fn(),
       };
-      render(<Sequence {...testData} />, { store: testStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: testStore, wrapWithRouter: true });
       expect(await screen.findByText('Loading learning sequence...')).toBeInTheDocument();
 
       const sequencePreviousButton = screen.getByRole('link', { name: /previous/i });
@@ -210,7 +236,7 @@ describe('Sequence', () => {
         sequenceId: sequenceBlocks[0].id,
         nextSequenceHandler: jest.fn(),
       };
-      render(<Sequence {...testData} />, { store: testStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: testStore, wrapWithRouter: true });
       expect(await screen.findByText('Loading learning sequence...')).toBeInTheDocument();
 
       const sequenceNextButton = screen.getByRole('link', { name: /next/i });
@@ -248,7 +274,7 @@ describe('Sequence', () => {
         previousSequenceHandler: jest.fn(),
         nextSequenceHandler: jest.fn(),
       };
-      render(<Sequence {...testData} />, { store: testStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: testStore, wrapWithRouter: true });
       await waitFor(() => expect(screen.queryByText('Loading learning sequence...')).toBeInTheDocument());
 
       fireEvent.click(screen.getByRole('link', { name: /previous/i }));
@@ -272,7 +298,7 @@ describe('Sequence', () => {
         unitNavigationHandler: jest.fn(),
         previousSequenceHandler: jest.fn(),
       };
-      render(<Sequence {...testData} />, { store: testStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: testStore, wrapWithRouter: true });
       loadUnit();
       await waitFor(() => expect(screen.queryByText('Loading learning sequence...')).not.toBeInTheDocument());
 
@@ -291,7 +317,7 @@ describe('Sequence', () => {
         unitNavigationHandler: jest.fn(),
         nextSequenceHandler: jest.fn(),
       };
-      render(<Sequence {...testData} />, { store: testStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: testStore, wrapWithRouter: true });
       loadUnit();
       await waitFor(() => expect(screen.queryByText('Loading learning sequence...')).not.toBeInTheDocument());
 
@@ -322,7 +348,11 @@ describe('Sequence', () => {
         { courseId: courseMetadata.id, unitBlocks: block.children.length ? unitBlocks : [], sequenceBlock: block },
       ));
       const innerTestStore = await initializeTestStore({
-        courseMetadata, unitBlocks, sequenceBlocks: testSequenceBlocks, sequenceMetadata: testSequenceMetadata,
+        courseMetadata,
+        unitBlocks,
+        sequenceBlocks: testSequenceBlocks,
+        sequenceMetadata: testSequenceMetadata,
+        enableNavigationSidebar,
       }, false);
       const testData = {
         ...mockData,
@@ -333,17 +363,17 @@ describe('Sequence', () => {
         nextSequenceHandler: jest.fn(),
       };
 
-      render(<Sequence {...testData} />, { store: innerTestStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: innerTestStore, wrapWithRouter: true });
       loadUnit();
       await waitFor(() => expect(screen.queryByText('Loading learning sequence...')).not.toBeInTheDocument());
 
       screen.getAllByRole('link', { name: /previous/i }).forEach(button => fireEvent.click(button));
       expect(testData.previousSequenceHandler).toHaveBeenCalledTimes(2);
-      expect(testData.unitNavigationHandler).not.toHaveBeenCalled();
+      expect(testData.unitNavigationHandler).toHaveBeenCalledTimes(2);
 
       screen.getAllByRole('link', { name: /next/i }).forEach(button => fireEvent.click(button));
       expect(testData.nextSequenceHandler).toHaveBeenCalledTimes(2);
-      expect(testData.unitNavigationHandler).not.toHaveBeenCalled();
+      expect(testData.unitNavigationHandler).toHaveBeenCalledTimes(4);
 
       expect(sendTrackEvent).toHaveBeenNthCalledWith(1, 'edx.ui.lms.sequence.previous_selected', {
         current_tab: 1,
@@ -381,7 +411,7 @@ describe('Sequence', () => {
         sequenceId: sequenceBlocks[0].id,
         unitNavigationHandler: jest.fn(),
       };
-      render(<Sequence {...testData} />, { store: testStore, wrapWithRouter: true });
+      render(<SidebarWrapper overrideData={testData} />, { store: testStore, wrapWithRouter: true });
       await waitFor(() => expect(screen.queryByText('Loading learning sequence...')).toBeInTheDocument());
 
       fireEvent.click(screen.getByRole('link', { name: targetUnit.display_name }));
@@ -396,16 +426,6 @@ describe('Sequence', () => {
     });
   });
 
-  const SidebarWrapper = ({ contextValue }) => (
-    <SidebarContext.Provider value={contextValue}>
-      <Sequence {...mockData} />
-    </SidebarContext.Provider>
-  );
-
-  SidebarWrapper.propTypes = {
-    contextValue: PropTypes.shape({}).isRequired,
-  };
-
   describe('notification feature', () => {
     it('renders notification tray in sequence', async () => {
       render(<SidebarWrapper contextValue={{ courseId: mockData.courseId, currentSidebar: 'NOTIFICATIONS', toggleSidebar: () => null }} />, { wrapWithRouter: true });
@@ -417,7 +437,7 @@ describe('Sequence', () => {
       render(<SidebarWrapper contextValue={{ courseId: mockData.courseId, currentSidebar: 'NOTIFICATIONS', toggleSidebar: toggleNotificationTray }} />, { wrapWithRouter: true });
       const notificationCloseIconButton = await screen.findByRole('button', { name: /Close notification tray/i });
       fireEvent.click(notificationCloseIconButton);
-      expect(toggleNotificationTray).toHaveBeenCalledTimes(1);
+      expect(toggleNotificationTray).toHaveBeenCalled();
     });
 
     it('does not render notification tray in sequence by default if in responsive view', async () => {

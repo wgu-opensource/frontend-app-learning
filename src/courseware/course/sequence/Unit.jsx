@@ -1,7 +1,7 @@
 import { getConfig } from '@edx/frontend-platform';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
 import { AppContext, ErrorPage } from '@edx/frontend-platform/react';
-import { Modal } from '@edx/paragon';
+import { Modal } from '@openedx/paragon';
 import PropTypes from 'prop-types';
 import React, {
   Suspense, useCallback, useContext, useEffect, useLayoutEffect, useState,

@@ -12,10 +12,12 @@ import {
   postDismissWelcomeMessage,
   postRequestCert,
   getLiveTabIframe,
+  getCoursewareSearchEnabledFlag,
+  searchCourseContentFromAPI,
 } from './api';
 
 import {
-  addModel,
+  addModel, updateModel,
 } from '../../generic/model-store';
 
 import {
@@ -26,6 +28,8 @@ import {
   setCallToActionToast,
 } from './slice';
 
+import mapSearchResponse from '../courseware-search/map-search-response';
+
 const eventTypes = {
   POST_EVENT: 'post_event',
 };
@@ -34,28 +38,41 @@ export function fetchTab(courseId, tab, getTabData, targetUserId) {
   return async (dispatch) => {
     dispatch(fetchTabRequest({ courseId }));
     try {
-      const courseHomeCourseMetadata = await getCourseHomeCourseMetadata(courseId, 'outline');
-      dispatch(addModel({
-        modelType: 'courseHomeMeta',
-        model: {
-          id: courseId,
-          ...courseHomeCourseMetadata,
-        },
-      }));
-      const tabDataResult = getTabData && await getTabData(courseId, targetUserId);
-      if (tabDataResult) {
+      const promisesToFulfill = [getCourseHomeCourseMetadata(courseId, 'outline')];
+      if (getTabData) {
+        promisesToFulfill.push(getTabData(courseId, targetUserId));
+      }
+      const [
+        courseHomeCourseMetadataResult,
+        tabDataResult,
+      ] = await Promise.allSettled(promisesToFulfill);
+      if (courseHomeCourseMetadataResult.status === 'fulfilled') {
+        dispatch(addModel({
+          modelType: 'courseHomeMeta',
+          model: {
+            id: courseId,
+            ...courseHomeCourseMetadataResult.value,
+          },
+        }));
+      }
+      if (tabDataResult?.status === 'fulfilled') {
         dispatch(addModel({
           modelType: tab,
           model: {
             id: courseId,
-            ...tabDataResult,
+            ...tabDataResult.value,
           },
         }));
       }
-      // Disable the access-denied path for now - it caused a regression
-      if (!courseHomeCourseMetadata.courseAccess.hasAccess) {
+      if (courseHomeCourseMetadataResult.status === 'rejected') {
+        throw courseHomeCourseMetadataResult.reason;
+      } else if (!courseHomeCourseMetadataResult.value.courseAccess.hasAccess) {
+        // If the learner does not have access to the course, short cut to dispatch to a denied response regardless of
+        // the tabDataResult.
         dispatch(fetchTabDenied({ courseId }));
-      } else if (tabDataResult || !getTabData) {
+      } else if (tabDataResult?.status === 'rejected') {
+        throw tabDataResult.reason;
+      } else {
         dispatch(fetchTabSuccess({
           courseId,
           targetUserId,
@@ -137,5 +154,72 @@ export function processEvent(eventData, getTabData) {
         dispatch(setCallToActionToast({ header, link, linkText }));
       });
     }
+  };
+}
+
+export async function fetchCoursewareSearchSettings(courseId) {
+  try {
+    const { enabled } = await getCoursewareSearchEnabledFlag(courseId);
+    return { enabled };
+  } catch (e) {
+    return { enabled: false };
+  }
+}
+
+export function searchCourseContent(courseId, searchKeyword) {
+  return async (dispatch) => {
+    const start = new Date();
+
+    dispatch(addModel({
+      modelType: 'contentSearchResults',
+      model: {
+        id: courseId,
+        searchKeyword,
+        results: [],
+        errors: undefined,
+        loading: true,
+      },
+    }));
+
+    let data;
+    let curatedResponse;
+    let errors;
+    try {
+      ({ data } = await searchCourseContentFromAPI(courseId, searchKeyword));
+      curatedResponse = mapSearchResponse(data, searchKeyword);
+    } catch (e) {
+      // TODO: Remove when publishing to prod. Just temporary for performance debugging.
+      // eslint-disable-next-line no-console
+      console.error('Error on Courseware Search: ', e.message);
+      errors = e.message;
+    }
+
+    dispatch(updateModel({
+      modelType: 'contentSearchResults',
+      model: {
+        ...curatedResponse,
+        id: courseId,
+        searchKeyword,
+        errors,
+        loading: false,
+      },
+    }));
+
+    const end = new Date();
+    const clientMs = (end - start);
+    const {
+      took, total, maxScore, accessDeniedCount,
+    } = data;
+
+    // TODO: Remove when publishing to prod. Just temporary for performance debugging.
+    // eslint-disable-next-line no-console
+    console.table({
+      'Search Keyword': searchKeyword,
+      'Client time (ms)': clientMs,
+      'Server time (ms)': took,
+      'Total matches': total,
+      'Max score': maxScore,
+      'Access denied count': accessDeniedCount,
+    });
   };
 }

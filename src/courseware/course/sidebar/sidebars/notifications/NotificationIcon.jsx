@@ -1,6 +1,6 @@
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
-import { Icon } from '@edx/paragon';
-import { WatchOutline } from '@edx/paragon/icons';
+import { Icon } from '@openedx/paragon';
+import { WatchOutline } from '@openedx/paragon/icons';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -29,9 +29,13 @@ const NotificationIcon = ({
   </>
 );
 
+NotificationIcon.defaultProps = {
+  status: null,
+};
+
 NotificationIcon.propTypes = {
   intl: intlShape.isRequired,
-  status: PropTypes.string.isRequired,
+  status: PropTypes.string,
   notificationColor: PropTypes.string.isRequired,
 };
 

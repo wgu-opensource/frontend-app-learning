@@ -2,31 +2,39 @@ import React from 'react';
 
 import { StrictDict, useKeyedState } from '@edx/react-unit-test-utils/dist';
 
-import { useEventListener } from '../../../../../generic/hooks';
+import { useEventListener } from '@src/generic/hooks';
 
 export const stateKeys = StrictDict({
   isOpen: 'isOpen',
   options: 'options',
 });
 
-export const DEFAULT_HEIGHT = '100vh';
+export const DEFAULT_HEIGHT = '100%';
 
-const useModalIFrameBehavior = () => {
+const useModalIFrameData = () => {
   const [isOpen, setIsOpen] = useKeyedState(stateKeys.isOpen, false);
   const [options, setOptions] = useKeyedState(stateKeys.options, { height: DEFAULT_HEIGHT });
 
-  const receiveMessage = React.useCallback(({ data }) => {
-    const { type, payload } = data;
+  const handleModalClose = () => {
+    const rootFrame = document.querySelector('iframe');
+    setIsOpen(false);
+    rootFrame.contentWindow.postMessage({ type: 'plugin.modal-close' }, '*');
+  };
+
+  const receiveMessage = React.useCallback((event) => {
+    const { type, payload } = event.data;
+    if (!type) {
+      return;
+    }
     if (type === 'plugin.modal') {
       setOptions((current) => ({ ...current, ...payload }));
       setIsOpen(true);
     }
+    if (type === 'plugin.modal-close') {
+      handleModalClose();
+    }
   }, []);
   useEventListener('message', receiveMessage);
-
-  const handleModalClose = () => {
-    setIsOpen(false);
-  };
 
   return {
     handleModalClose,
@@ -34,4 +42,4 @@ const useModalIFrameBehavior = () => {
   };
 };
 
-export default useModalIFrameBehavior;
+export default useModalIFrameData;

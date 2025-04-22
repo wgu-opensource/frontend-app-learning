@@ -6,7 +6,7 @@ import {
   FormattedDate, FormattedMessage, injectIntl, intlShape,
 } from '@edx/frontend-platform/i18n';
 
-import { Button, Card } from '@edx/paragon';
+import { Button, Card } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
 import { useModel } from '../../../generic/model-store';
 import { COURSE_EXIT_MODES, getCourseExitMode } from '../../../courseware/course/course-exit/utils';
@@ -154,7 +154,7 @@ const CertificateStatus = ({ intl }) => {
         certAvailabilityDate = <FormattedDate value={certificateAvailableDate} day="numeric" month="long" year="numeric" />;
         body = (
           <FormattedMessage
-            id="courseCelebration.certificateBody.notAvailable.endDate"
+            id="progress.certificateStatus.notAvailable.endDate"
             defaultMessage="This course ends on {endDate}. Final grades and any earned certificates are
             scheduled to be available after {certAvailabilityDate}."
             description="This shown for leaner when they are eligible for certifcate but it't not available yet, it could because leaners just finished the course quickly!"

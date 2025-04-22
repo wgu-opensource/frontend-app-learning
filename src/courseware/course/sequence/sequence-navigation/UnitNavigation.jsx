@@ -1,7 +1,7 @@
-import React from 'react';
+import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Button } from '@edx/paragon';
+import { Button } from '@openedx/paragon';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -21,6 +21,7 @@ const UnitNavigation = ({
   unitId,
   onClickPrevious,
   onClickNext,
+  isAtTop,
 }) => {
   const {
     isFirstUnit, isLastUnit, nextLink, previousLink,
@@ -33,7 +34,7 @@ const UnitNavigation = ({
     return (
       <Button
         variant="outline-secondary"
-        className="previous-button mr-2 d-flex align-items-center justify-content-center"
+        className="previous-button mr-sm-2 d-flex align-items-center justify-content-center"
         disabled={disabled}
         onClick={onClickPrevious}
         as={disabled ? undefined : Link}
@@ -68,7 +69,7 @@ const UnitNavigation = ({
   };
 
   return (
-    <div className="unit-navigation d-flex">
+    <div className={classNames('unit-navigation d-flex', { 'top-unit-navigation mb-3 w-100': isAtTop })}>
       {renderPreviousButton()}
       {renderNextButton()}
     </div>
@@ -81,10 +82,12 @@ UnitNavigation.propTypes = {
   unitId: PropTypes.string,
   onClickPrevious: PropTypes.func.isRequired,
   onClickNext: PropTypes.func.isRequired,
+  isAtTop: PropTypes.bool,
 };
 
 UnitNavigation.defaultProps = {
   unitId: null,
+  isAtTop: false,
 };
 
 export default injectIntl(UnitNavigation);

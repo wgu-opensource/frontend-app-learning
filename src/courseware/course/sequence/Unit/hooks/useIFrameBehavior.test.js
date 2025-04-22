@@ -5,9 +5,9 @@ import { getEffects, mockUseKeyedState } from '@edx/react-unit-test-utils';
 import { logError } from '@edx/frontend-platform/logging';
 
 import { getConfig } from '@edx/frontend-platform';
-import { fetchCourse } from '../../../../data';
-import { processEvent } from '../../../../../course-home/data/thunks';
-import { useEventListener } from '../../../../../generic/hooks';
+import { fetchCourse } from '@src/courseware/data';
+import { processEvent } from '@src/course-home/data/thunks';
+import { useEventListener } from '@src/generic/hooks';
 
 import { messageTypes } from '../constants';
 
@@ -33,13 +33,13 @@ jest.mock('@edx/frontend-platform/logging', () => ({
   logError: jest.fn(),
 }));
 
-jest.mock('../../../../data', () => ({
+jest.mock('@src/courseware/data', () => ({
   fetchCourse: jest.fn(),
 }));
-jest.mock('../../../../../course-home/data/thunks', () => ({
+jest.mock('@src/course-home/data/thunks', () => ({
   processEvent: jest.fn((...args) => ({ processEvent: args })),
 }));
-jest.mock('../../../../../generic/hooks', () => ({
+jest.mock('@src/generic/hooks', () => ({
   useEventListener: jest.fn(),
 }));
 
@@ -154,6 +154,9 @@ describe('useIFrameBehavior hook', () => {
         const resizeMessage = (height = 23) => ({
           data: { type: messageTypes.resize, payload: { height } },
         });
+        const videoFullScreenMessage = (open = false) => ({
+          data: { type: messageTypes.videoFullScreen, payload: { open } },
+        });
         const testSetIFrameHeight = (height = 23) => {
           const { cb } = useEventListener.mock.calls[0][1];
           cb(resizeMessage(height));
@@ -209,7 +212,7 @@ describe('useIFrameBehavior hook', () => {
           state.mockVals({ ...defaultStateVals, windowTopOffset });
           hook = useIFrameBehavior(props);
           const { cb } = useEventListener.mock.calls[0][1];
-          cb(resizeMessage());
+          cb(videoFullScreenMessage());
           expect(window.scrollTo).toHaveBeenCalledWith(0, windowTopOffset);
         });
         it('does not scroll if towverticalp offset is not set', () => {

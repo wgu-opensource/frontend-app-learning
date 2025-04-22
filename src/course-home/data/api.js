@@ -136,6 +136,7 @@ export function normalizeOutlineBlocks(courseId, blocks) {
           title: block.display_name,
           resumeBlock: block.resume_block,
           sequenceIds: block.children || [],
+          hideFromTOC: block.hide_from_toc,
         };
         break;
 
@@ -152,6 +153,8 @@ export function normalizeOutlineBlocks(courseId, blocks) {
           // link in the outline (even though we ignore the given url and use an internal <Link> to ourselves).
           showLink: !!block.lms_web_url,
           title: block.display_name,
+          hideFromTOC: block.hide_from_toc,
+          navigationDisabled: block.navigation_disabled,
         };
         break;
 
@@ -444,4 +447,21 @@ export async function unsubscribeFromCourseGoal(token) {
   const url = new URL(`${getConfig().LMS_BASE_URL}/api/course_home/unsubscribe_from_course_goal/${token}`);
   return getAuthenticatedHttpClient().post(url.href)
     .then(res => camelCaseObject(res));
+}
+
+export async function getCoursewareSearchEnabledFlag(courseId) {
+  const url = new URL(`${getConfig().LMS_BASE_URL}/courses/${courseId}/courseware-search/enabled/`);
+  const { data } = await getAuthenticatedHttpClient().get(url.href);
+  return { enabled: data.enabled || false };
+}
+
+export async function searchCourseContentFromAPI(courseId, searchKeyword, options = {}) {
+  const defaults = { page: 0, limit: 20 };
+  const { page, limit } = { ...defaults, ...options };
+
+  const url = new URL(`${getConfig().LMS_BASE_URL}/search/${courseId}`);
+  const formData = `search_string=${searchKeyword}&page_size=${limit}&page_index=${page}`;
+  const response = await getAuthenticatedHttpClient().post(url.href, formData);
+
+  return camelCaseObject(response);
 }

@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import PropTypes from 'prop-types';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
-import { Dropdown } from '@edx/paragon';
+import { Dropdown } from '@openedx/paragon';
 
 import { UserMessagesContext } from '../../generic/user-messages';
 
@@ -122,7 +122,7 @@ class MasqueradeWidget extends Component {
         <div className="row">
           <span className="col-auto col-form-label pl-3">View this course as:</span>
           <Dropdown className="flex-shrink-1 mx-1">
-            <Dropdown.Toggle variant="inverse-outline-primary">
+            <Dropdown.Toggle id="masquerade-widget-toggle" variant="inverse-outline-primary">
               {masquerade}
             </Dropdown.Toggle>
             <Dropdown.Menu>

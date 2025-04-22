@@ -5,7 +5,7 @@ import { FormattedMessage } from '@edx/frontend-platform/i18n';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome } from '@fortawesome/free-solid-svg-icons';
 import { useSelector } from 'react-redux';
-import { useToggle, ModalPopup, Menu } from '@edx/paragon';
+import { useToggle, ModalPopup, Menu } from '@openedx/paragon';
 import { Link } from 'react-router-dom';
 import { useModel, useModels } from '../../generic/model-store';
 import JumpNavMenuItem from './JumpNavMenuItem';
@@ -62,6 +62,7 @@ const CourseBreadcrumb = ({
               <Menu>
                 {content.map((item) => (
                   <JumpNavMenuItem
+                    key={item.label}
                     isDefault={item.default}
                     sequences={item.sequences}
                     courseId={courseId}
@@ -153,7 +154,7 @@ const CourseBreadcrumbs = ({
   }, [courseStatus, sequenceStatus, allSequencesInSections]);
 
   return (
-    <nav aria-label="breadcrumb" className="my-4 d-inline-block col-sm-10">
+    <nav aria-label="breadcrumb" className="d-inline-block col-sm-10 mb-3">
       <ol className="list-unstyled d-flex flex-nowrap align-items-center m-0">
         <li className="list-unstyled col-auto m-0 p-0">
           <Link
@@ -169,8 +170,10 @@ const CourseBreadcrumbs = ({
             />
           </Link>
         </li>
-        {links.map((content) => (
+        {links.map((content, i) => (
           <CourseBreadcrumb
+            // eslint-disable-next-line react/no-array-index-key
+            key={i}
             courseId={courseId}
             sequenceId={sequenceId}
             content={content}

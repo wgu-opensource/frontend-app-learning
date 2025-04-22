@@ -22,12 +22,30 @@ export const ROUTES = {
   UNSUBSCRIBE: '/goal-unsubscribe/:token',
   REDIRECT: '/redirect/*',
   DASHBOARD: 'dashboard',
+  ENTERPRISE_LEARNER_DASHBOARD: 'enterprise-learner-dashboard',
   CONSENT: 'consent',
 };
 
 export const REDIRECT_MODES = {
   DASHBOARD_REDIRECT: 'dashboard-redirect',
+  ENTERPRISE_LEARNER_DASHBOARD_REDIRECT: 'enterprise-learner-dashboard-redirect',
   CONSENT_REDIRECT: 'consent-redirect',
   HOME_REDIRECT: 'home-redirect',
   SURVEY_REDIRECT: 'survey-redirect',
+};
+
+export const VERIFIED_MODES = [
+  'professional',
+  'verified',
+  'no-id-professional',
+  'credit',
+  'masters',
+  'executive-education',
+  'paid-executive-education',
+  'paid-bootcamp',
+];
+
+export const WIDGETS = {
+  DISCUSSIONS: 'DISCUSSIONS',
+  NOTIFICATIONS: 'NOTIFICATIONS',
 };

@@ -1,6 +1,6 @@
 @import "~@edx/brand/paragon/fonts";
 @import "~@edx/brand/paragon/variables";
-@import "~@edx/paragon/scss/core/core";
+@import "~@openedx/paragon/scss/core/core";
 @import "~@edx/brand/paragon/overrides";
 
 @import "~@edx/frontend-component-footer/dist/footer";
@@ -35,24 +35,6 @@
 
   footer {
     flex: 0;
-  }
-}
-
-.course-tabs-navigation {
-  border-bottom: solid 1px #eaeaea;
-
-  .nav a,
-  .nav button {
-    &:hover {
-      background-color: $light-400;
-    }
-  }
-
-  .nav a {
-    &:not(.active):hover {
-      background-color: $light-400;
-      border-bottom: none;
-    }
   }
 }
 
@@ -122,6 +104,10 @@
     margin: -1px -1px 0;
   }
 
+  @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+    width: 100% !important;
+  }
+
   .btn {
     flex-grow: 1;
     display: inline-flex;
@@ -189,6 +175,18 @@
       flex-basis: 100%;
       min-width: 3rem;
     }
+  }
+
+  .navigation-tab-width-xl {
+    max-width: 47rem;
+  }
+
+  .navigation-tab-width-large {
+    max-width: 28rem;
+  }
+
+  .navigation-tab-width-medium{
+    max-width: 23.5rem;
   }
 
   .sequence-navigation-dropdown {
@@ -333,9 +331,13 @@
   max-width: 640px;
   margin: 0 auto;
 
+  @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+    flex-direction: column;
+    gap: $spacer;
+  }
+
   .previous-button,
   .next-button {
-    white-space: nowrap;
     border-radius: 4px;
 
     &:focus:before {
@@ -345,10 +347,31 @@
 
   .next-button {
     flex-basis: 75%;
+
+     @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+       flex-basis: 100%;
+     }
   }
 
   .previous-button {
     flex-basis: 25%;
+
+     @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+       flex-basis: 100%;
+     }
+  }
+}
+
+.top-unit-navigation {
+  max-width: 100%;
+  justify-content: flex-end;
+
+  .next-button,
+  .previous-button {
+    @media (min-width: map-get($grid-breakpoints, "md")) {
+      flex-basis: auto;
+      min-width: 8rem;
+    }
   }
 }
 
@@ -395,8 +418,21 @@
   box-shadow: 0 .0625rem .125rem rgba(0, 0, 0, .2) !important;
 }
 
+.icon-hover {
+  &:hover {
+    color: $primary-500 !important;
+    background-color: $light-300 !important;
+  }
+}
+
+.sticky-top {
+  position: sticky;
+  top: 0;
+}
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
+@import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
 @import "courseware/course/sidebar/sidebars/notifications/NotificationIcon.scss";
 @import "courseware/course/sequence/lock-paywall/LockPaywall.scss";
 @import "shared/streak-celebration/StreakCelebrationModal.scss";
@@ -406,8 +442,12 @@
 @import "generic/upgrade-notification/UpgradeNotification.scss";
 @import "generic/upsell-bullets/UpsellBullets.scss";
 @import "course-home/outline-tab/widgets/ProctoringInfoPanel.scss";
-@import "src/course-home/outline-tab/widgets/FlagButton.scss";
+@import "course-home/outline-tab/widgets/FlagButton.scss";
 @import "course-home/progress-tab/course-completion/CompletionDonutChart.scss";
 @import "course-home/progress-tab/grades/course-grade/GradeBar.scss";
 @import "courseware/course/course-exit/CourseRecommendations";
 @import "product-tours/newUserCourseHomeTour/NewUserCourseHomeTourModal.scss";
+@import "course-home/courseware-search/courseware-search.scss";
+@import "course-tabs/course-tabs-navigation.scss";
+@import "courseware/course/sidebar/common/SidebarBase.scss";
+@import "courseware/course/sidebar/sidebars/course-outline/CourseOutlineTray.scss";

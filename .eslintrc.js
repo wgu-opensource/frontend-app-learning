@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-const { createConfig } = require('@edx/frontend-build');
+const { createConfig } = require('@openedx/frontend-build');
 
 const config = createConfig('eslint', {
   rules: {
@@ -11,6 +11,13 @@ const config = createConfig('eslint', {
     'react/jsx-no-useless-fragment': 'off',
     'react/no-unknown-property': 'off',
     'func-names': 'off',
+  },
+  settings: {
+    'import/resolver': {
+      webpack: {
+        config: 'webpack.prod.config.js',
+      },
+    },
   },
 });
 
