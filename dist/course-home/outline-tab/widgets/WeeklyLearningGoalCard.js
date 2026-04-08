@@ -1,0 +1,163 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _react = _interopRequireWildcard(require("react"));
+var _reactRouterDom = require("react-router-dom");
+var _propTypes = _interopRequireDefault(require("prop-types"));
+var _paragon = require("@openedx/paragon");
+var _frontendPlatform = require("@edx/frontend-platform");
+var _analytics = require("@edx/frontend-platform/analytics");
+var _auth = require("@edx/frontend-platform/auth");
+var _i18n = require("@edx/frontend-platform/i18n");
+var _icons = require("@openedx/paragon/icons");
+var _reactRedux = require("react-redux");
+var _messages = _interopRequireDefault(require("../messages"));
+var _LearningGoalButton = _interopRequireDefault(require("./LearningGoalButton"));
+var _data = require("../../data");
+var _modelStore = require("../../../generic/model-store");
+require("./FlagButton.scss");
+var _jsxRuntime = require("react/jsx-runtime");
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+const WeeklyLearningGoalCard = ({
+  daysPerWeek,
+  subscribedToReminders
+}) => {
+  const intl = (0, _i18n.useIntl)();
+  const {
+    courseId
+  } = (0, _reactRedux.useSelector)(state => state.courseHome);
+  const {
+    isMasquerading,
+    org
+  } = (0, _modelStore.useModel)('courseHomeMeta', courseId);
+  const {
+    administrator
+  } = (0, _auth.getAuthenticatedUser)();
+  const [daysPerWeekGoal, setDaysPerWeekGoal] = (0, _react.useState)(daysPerWeek);
+  // eslint-disable-next-line react/prop-types
+  const [isGetReminderSelected, setGetReminderSelected] = (0, _react.useState)(subscribedToReminders);
+  const location = (0, _reactRouterDom.useLocation)();
+  const handleSelect = (days, triggeredFromEmail = false) => {
+    // Set the subscription button if this is the first time selecting a goal
+    const selectReminders = daysPerWeekGoal === null ? true : isGetReminderSelected;
+    setGetReminderSelected(selectReminders);
+    setDaysPerWeekGoal(days);
+    if (!isMasquerading) {
+      // don't save goal updates while masquerading
+      (0, _data.saveWeeklyLearningGoal)(courseId, days, selectReminders);
+      (0, _analytics.sendTrackEvent)('edx.ui.lms.goal.days-per-week.changed', {
+        org_key: org,
+        courserun_key: courseId,
+        is_staff: administrator,
+        num_days: days,
+        reminder_selected: selectReminders
+      });
+      if (triggeredFromEmail) {
+        (0, _analytics.sendTrackEvent)('enrollment.email.clicked.setgoal', {});
+      }
+    }
+  };
+  function handleSubscribeToReminders(event) {
+    const isGetReminderChecked = event.target.checked;
+    setGetReminderSelected(isGetReminderChecked);
+    if (!isMasquerading) {
+      // don't save goal updates while masquerading
+      (0, _data.saveWeeklyLearningGoal)(courseId, daysPerWeekGoal, isGetReminderChecked);
+      (0, _analytics.sendTrackEvent)('edx.ui.lms.goal.reminder-selected.changed', {
+        org_key: org,
+        courserun_key: courseId,
+        is_staff: administrator,
+        num_days: daysPerWeekGoal,
+        reminder_selected: isGetReminderChecked
+      });
+    }
+  }
+  (0, _react.useEffect)(() => {
+    const currentParams = new URLSearchParams(location.search);
+    const weeklyGoal = Number(currentParams.get('weekly_goal'));
+    if ([1, 3, 5].includes(weeklyGoal)) {
+      handleSelect(weeklyGoal, true);
+
+      // Deleting the weekly_goal query param as it only needs to be set once
+      // whenever passed in query params.
+      currentParams.delete('weekly_goal');
+      _frontendPlatform.history.replace({
+        search: currentParams.toString()
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+  return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_paragon.Card, {
+    id: "courseHome-weeklyLearningGoal",
+    className: "row w-100 m-0 mb-3 raised-card",
+    "data-testid": "weekly-learning-goal-card",
+    children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_paragon.Card.Header, {
+      size: "sm",
+      title: /*#__PURE__*/(0, _jsxRuntime.jsx)("div", {
+        id: "set-weekly-goal-header",
+        children: intl.formatMessage(_messages.default.setWeeklyGoal)
+      }),
+      subtitle: intl.formatMessage(_messages.default.setWeeklyGoalDetail)
+    }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_paragon.Card.Section, {
+      className: "text-gray-700 small",
+      children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)("div", {
+        role: "radiogroup",
+        "aria-labelledby": "set-weekly-goal-header",
+        className: "flag-button-container m-0 p-0",
+        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_LearningGoalButton.default, {
+          level: "casual",
+          isSelected: daysPerWeekGoal === 1,
+          handleSelect: handleSelect
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_LearningGoalButton.default, {
+          level: "regular",
+          isSelected: daysPerWeekGoal === 3,
+          handleSelect: handleSelect
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_LearningGoalButton.default, {
+          level: "intense",
+          isSelected: daysPerWeekGoal === 5,
+          handleSelect: handleSelect
+        })]
+      }), /*#__PURE__*/(0, _jsxRuntime.jsx)("div", {
+        className: "d-flex pt-3",
+        children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_paragon.Form.Switch, {
+          checked: isGetReminderSelected,
+          onChange: event => handleSubscribeToReminders(event),
+          disabled: !daysPerWeekGoal,
+          children: /*#__PURE__*/(0, _jsxRuntime.jsx)("small", {
+            children: intl.formatMessage(_messages.default.setGoalReminder)
+          })
+        })
+      })]
+    }), isGetReminderSelected && /*#__PURE__*/(0, _jsxRuntime.jsx)(_paragon.Card.Section, {
+      muted: true,
+      children: /*#__PURE__*/(0, _jsxRuntime.jsxs)("div", {
+        className: "row w-100 m-0 small align-center",
+        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)("div", {
+          className: "d-flex align-items-center pr-1",
+          children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_paragon.Icon, {
+            className: "text-primary-500",
+            src: _icons.Email
+          })
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)("div", {
+          className: "col",
+          children: intl.formatMessage(_messages.default.goalReminderDetail)
+        })]
+      })
+    })]
+  });
+};
+WeeklyLearningGoalCard.propTypes = {
+  daysPerWeek: _propTypes.default.number,
+  subscribedToReminders: _propTypes.default.bool
+};
+WeeklyLearningGoalCard.defaultProps = {
+  daysPerWeek: null,
+  subscribedToReminders: false
+};
+var _default = exports.default = WeeklyLearningGoalCard;
+//# sourceMappingURL=WeeklyLearningGoalCard.js.map

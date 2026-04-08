@@ -1,0 +1,167 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _react = _interopRequireWildcard(require("react"));
+var _reactRedux = require("react-redux");
+var _propTypes = _interopRequireDefault(require("prop-types"));
+var _analytics = require("@edx/frontend-platform/analytics");
+var _auth = require("@edx/frontend-platform/auth");
+var _paragon = require("@openedx/paragon");
+var _AbandonTour = _interopRequireDefault(require("./AbandonTour"));
+var _CoursewareTour = _interopRequireDefault(require("./CoursewareTour"));
+var _ExistingUserCourseHomeTour = _interopRequireDefault(require("./ExistingUserCourseHomeTour"));
+var _NewUserCourseHomeTour = _interopRequireDefault(require("./newUserCourseHomeTour/NewUserCourseHomeTour"));
+var _NewUserCourseHomeTourModal = _interopRequireDefault(require("./newUserCourseHomeTour/NewUserCourseHomeTourModal"));
+var _data = require("./data");
+var _jsxRuntime = require("react/jsx-runtime");
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+/* eslint-disable react-hooks/exhaustive-deps */
+
+const ProductTours = ({
+  activeTab,
+  courseId,
+  isStreakCelebrationOpen,
+  org
+}) => {
+  const {
+    proctoringPanelStatus
+  } = (0, _reactRedux.useSelector)(state => state.courseHome);
+  const {
+    showCoursewareTour,
+    showExistingUserCourseHomeTour,
+    showNewUserCourseHomeModal,
+    showNewUserCourseHomeTour
+  } = (0, _reactRedux.useSelector)(state => state.tours);
+  const [isAbandonTourEnabled, setIsAbandonTourEnabled] = (0, _react.useState)(false);
+  const [isCoursewareTourEnabled, setIsCoursewareTourEnabled] = (0, _react.useState)(false);
+  const [isExistingUserCourseHomeTourEnabled, setIsExistingUserCourseHomeTourEnabled] = (0, _react.useState)(false);
+  const [isNewUserCourseHomeTourEnabled, setIsNewUserCourseHomeTourEnabled] = (0, _react.useState)(false);
+  const dispatch = (0, _reactRedux.useDispatch)();
+  const {
+    administrator,
+    username
+  } = (0, _auth.getAuthenticatedUser)() || {};
+  const isCoursewareTab = activeTab === 'courseware';
+  const isOutlineTab = activeTab === 'outline';
+  (0, _react.useEffect)(() => {
+    const isOutlineTabResolved = isOutlineTab && proctoringPanelStatus === 'loaded';
+    const userIsAuthenticated = !!username;
+
+    // Tours currently only exist on the Outline Tab and within Courseware, so we'll avoid
+    // calling the tour endpoint unnecessarily.
+    if (userIsAuthenticated && (isCoursewareTab || isOutlineTabResolved)) {
+      dispatch((0, _data.fetchTourData)(username));
+    }
+  }, [proctoringPanelStatus]);
+  (0, _react.useEffect)(() => {
+    if (isCoursewareTab && showCoursewareTour) {
+      setIsCoursewareTourEnabled(true);
+    }
+  }, [showCoursewareTour]);
+  (0, _react.useEffect)(() => {
+    if (isOutlineTab) {
+      setIsExistingUserCourseHomeTourEnabled(!!showExistingUserCourseHomeTour);
+    }
+  }, [showExistingUserCourseHomeTour]);
+  (0, _react.useEffect)(() => {
+    if (isOutlineTab && showNewUserCourseHomeTour) {
+      setIsAbandonTourEnabled(false);
+      setIsNewUserCourseHomeTourEnabled(true);
+    }
+  }, [showNewUserCourseHomeTour]);
+  if (isStreakCelebrationOpen) {
+    return null;
+  }
+
+  // The <ProductTour /> component cannot handle rendering multiple enabled tours at once.
+  // I.e. when adding new tours, beware that if multiple tours are enabled,
+  // the first enabled tour in the following array will be the only one that renders.
+  // The suggestion for populating these tour objects is to ensure only one tour is enabled at a time.
+  const tours = [(0, _AbandonTour.default)({
+    enabled: isAbandonTourEnabled,
+    onEnd: () => setIsAbandonTourEnabled(false)
+  }), (0, _CoursewareTour.default)({
+    enabled: isCoursewareTourEnabled,
+    onEnd: () => {
+      setIsCoursewareTourEnabled(false);
+      (0, _analytics.sendTrackEvent)('edx.ui.lms.courseware_tour.completed', {
+        org_key: org,
+        courserun_key: courseId,
+        is_staff: administrator
+      });
+      dispatch((0, _data.endCoursewareTour)(username));
+    }
+  }), (0, _ExistingUserCourseHomeTour.default)({
+    enabled: isExistingUserCourseHomeTourEnabled,
+    onEnd: () => {
+      setIsExistingUserCourseHomeTourEnabled(false);
+      (0, _analytics.sendTrackEvent)('edx.ui.lms.existing_user_tour.completed', {
+        org_key: org,
+        courserun_key: courseId,
+        is_staff: administrator
+      });
+      dispatch((0, _data.endCourseHomeTour)(username));
+    }
+  }), (0, _NewUserCourseHomeTour.default)({
+    enabled: isNewUserCourseHomeTourEnabled,
+    onDismiss: () => {
+      setIsNewUserCourseHomeTourEnabled(false);
+      setIsAbandonTourEnabled(true);
+      (0, _analytics.sendTrackEvent)('edx.ui.lms.new_user_tour.dismissed', {
+        org_key: org,
+        courserun_key: courseId,
+        is_staff: administrator
+      });
+      dispatch((0, _data.endCourseHomeTour)(username));
+      dispatch((0, _data.endCoursewareTour)(username));
+    },
+    onEnd: () => {
+      setIsNewUserCourseHomeTourEnabled(false);
+      (0, _analytics.sendTrackEvent)('edx.ui.lms.new_user_tour.completed', {
+        org_key: org,
+        courserun_key: courseId,
+        is_staff: administrator
+      });
+      dispatch((0, _data.endCourseHomeTour)(username));
+    }
+  })];
+  return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_jsxRuntime.Fragment, {
+    children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_paragon.ProductTour, {
+      tours: tours
+    }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_NewUserCourseHomeTourModal.default, {
+      isOpen: isOutlineTab && showNewUserCourseHomeModal,
+      onDismiss: () => {
+        (0, _analytics.sendTrackEvent)('edx.ui.lms.new_user_modal.dismissed', {
+          org_key: org,
+          courserun_key: courseId,
+          is_staff: administrator
+        });
+        dispatch((0, _data.closeNewUserCourseHomeModal)());
+        setIsAbandonTourEnabled(true);
+        dispatch((0, _data.endCourseHomeTour)(username));
+      },
+      onStartTour: () => {
+        (0, _analytics.sendTrackEvent)('edx.ui.lms.new_user_tour.started', {
+          org_key: org,
+          courserun_key: courseId,
+          is_staff: administrator
+        });
+        dispatch((0, _data.closeNewUserCourseHomeModal)());
+        setIsNewUserCourseHomeTourEnabled(true);
+      }
+    })]
+  });
+};
+ProductTours.propTypes = {
+  activeTab: _propTypes.default.string.isRequired,
+  courseId: _propTypes.default.string.isRequired,
+  isStreakCelebrationOpen: _propTypes.default.bool.isRequired,
+  org: _propTypes.default.string.isRequired
+};
+var _default = exports.default = ProductTours;
+//# sourceMappingURL=ProductTours.js.map
