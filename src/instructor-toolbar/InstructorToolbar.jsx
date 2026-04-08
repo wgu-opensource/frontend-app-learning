@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getConfig } from '@edx/frontend-platform';
+import { useIntl, FormattedMessage } from '@edx/frontend-platform/i18n';
 
 import { ALERT_TYPES, AlertList } from '../generic/user-messages';
 import Alert from '../generic/user-messages/Alert';
 import MasqueradeWidget from './masquerade-widget';
+import messages from './messages';
 import { useAccessExpirationMasqueradeBanner } from '../alerts/access-expiration-alert';
 import { useCourseStartMasqueradeBanner } from '../alerts/course-start-alert';
 
@@ -55,13 +57,14 @@ const InstructorToolbar = (props) => {
   const {
     courseId,
     unitId,
+    isStudioButtonVisible,
     tab,
   } = props;
 
   const urlInsights = getInsightsUrl(courseId);
   const urlStudio = getStudioUrl(courseId, unitId);
   const [masqueradeErrorMessage, showMasqueradeError] = useState(null);
-
+  const { formatMessage } = useIntl();
   const accessExpirationMasqueradeBanner = useAccessExpirationMasqueradeBanner(courseId, tab);
   const courseStartDateMasqueradeBanner = useCourseStartMasqueradeBanner(courseId, tab);
 
@@ -72,20 +75,20 @@ const InstructorToolbar = (props) => {
           <div className="align-items-center flex-grow-1 d-md-flex mx-1 my-1">
             <MasqueradeWidget courseId={courseId} onError={showMasqueradeError} />
           </div>
-          {(urlStudio || urlInsights) && (
+          {((urlStudio && isStudioButtonVisible) || urlInsights) && (
             <>
               <hr className="border-light" />
-              <span className="mr-2 mt-1 col-form-label">View course in:</span>
+              <span className="mr-2 mt-1 col-form-label"><FormattedMessage {...messages.titleViewCourseIn} /></span>
             </>
           )}
-          {urlStudio && (
+          {urlStudio && isStudioButtonVisible && (
             <span className="mx-1 my-1">
-              <a className="btn btn-inverse-outline-primary" href={urlStudio}>Studio</a>
+              <a className="btn btn-inverse-outline-primary" href={urlStudio}>{formatMessage(messages.titleStudio)}</a>
             </span>
           )}
           {urlInsights && (
             <span className="mx-1 my-1">
-              <a className="btn btn-inverse-outline-primary" href={urlInsights}>Insights</a>
+              <a className="btn btn-inverse-outline-primary" href={urlInsights}>{formatMessage(messages.titleInsights)}</a>
             </span>
           )}
         </div>
@@ -114,12 +117,14 @@ const InstructorToolbar = (props) => {
 InstructorToolbar.propTypes = {
   courseId: PropTypes.string,
   unitId: PropTypes.string,
+  isStudioButtonVisible: PropTypes.bool,
   tab: PropTypes.string,
 };
 
 InstructorToolbar.defaultProps = {
   courseId: undefined,
   unitId: undefined,
+  isStudioButtonVisible: true,
   tab: '',
 };
 

@@ -1,14 +1,38 @@
 import { BrowserRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
+import { Factory } from 'rosie';
 
-import { reducer as learningAssistantReducer } from '@edx/frontend-lib-learning-assistant';
+import { getConfig } from '@edx/frontend-platform';
 
-import { initializeMockApp, render, screen } from '../../../setupTest';
+import {
+  initializeMockApp,
+  initializeTestStore,
+  render,
+  screen,
+} from '../../../setupTest';
 
 import Chat from './Chat';
 
-jest.mock('@edx/frontend-platform/analytics');
+// We do a partial mock to avoid mocking out other exported values (e.g. the reducer).
+// We mock out the Xpert component, because the Xpert component has its own rules for whether it renders
+// or not, and this includes the results of API calls it makes. We don't want to test those rules here, just
+// whether the Xpert is rendered by the Chat component in certain conditions. Instead of actually rendering
+// Xpert, we render and assert on a mocked component.
+const mockXpertTestId = 'xpert';
+
+jest.mock('@edx/frontend-lib-learning-assistant', () => {
+  const originalModule = jest.requireActual('@edx/frontend-lib-learning-assistant');
+
+  return {
+    __esModule: true,
+    ...originalModule,
+    Xpert: () => (<div data-testid={mockXpertTestId}>mocked Xpert</div>),
+  };
+});
+
+jest.mock('@edx/frontend-platform', () => ({
+  getConfig: jest.fn().mockReturnValue({ ENABLE_XPERT_AUDIT: false }),
+}));
 
 initializeMockApp();
 
@@ -18,11 +42,26 @@ let enabledTestCases = [];
 let disabledTestCases = [];
 const enabledModes = [
   'professional', 'verified', 'no-id-professional', 'credit', 'masters', 'executive-education',
-  'paid-executive-education', 'paid-bootcamp', 'audit', 'honor', 'unpaid-executive-education', 'unpaid-bootcamp',
+  'paid-executive-education', 'paid-bootcamp',
 ];
-const disabledModes = [null, undefined, 'xyz'];
+const disabledModes = [null, undefined, 'xyz', 'audit', 'honor', 'unpaid-executive-education', 'unpaid-bootcamp'];
 
 describe('Chat', () => {
+  let store;
+
+  beforeAll(async () => {
+    store = await initializeTestStore({
+      specialExams: {
+        activeAttempt: {
+          attempt_id: null,
+        },
+        exam: {
+          id: null,
+        },
+      },
+    });
+  });
+
   // Generate test cases.
   enabledTestCases = enabledModes.map((mode) => ({ enrollmentMode: mode, isVisible: true }));
   disabledTestCases = disabledModes.map((mode) => ({ enrollmentMode: mode, isVisible: false }));
@@ -32,12 +71,6 @@ describe('Chat', () => {
     it(
       `visibility determined by ${test.enrollmentMode} enrollment mode when enabled and not isStaff`,
       async () => {
-        const store = configureStore({
-          reducer: {
-            learningAssistant: learningAssistantReducer,
-          },
-        });
-
         render(
           <BrowserRouter>
             <Chat
@@ -51,7 +84,7 @@ describe('Chat', () => {
           { store },
         );
 
-        const chat = screen.queryByTestId('toggle-button');
+        const chat = screen.queryByTestId(mockXpertTestId);
         if (test.isVisible) {
           expect(chat).toBeInTheDocument();
         } else {
@@ -65,12 +98,6 @@ describe('Chat', () => {
   testCases = enabledModes.concat(disabledModes).map((mode) => ({ enrollmentMode: mode, isVisible: true }));
   testCases.forEach(test => {
     it('visibility determined by isStaff when enabled and any enrollment mode', async () => {
-      const store = configureStore({
-        reducer: {
-          learningAssistant: learningAssistantReducer,
-        },
-      });
-
       render(
         <BrowserRouter>
           <Chat
@@ -84,7 +111,7 @@ describe('Chat', () => {
         { store },
       );
 
-      const chat = screen.queryByTestId('toggle-button');
+      const chat = screen.queryByTestId(mockXpertTestId);
       if (test.isVisible) {
         expect(chat).toBeInTheDocument();
       } else {
@@ -126,12 +153,6 @@ describe('Chat', () => {
       `visibility determined by ${test.enabled} enabled when ${test.isStaff} isStaff
       and ${test.enrollmentMode} enrollment mode`,
       async () => {
-        const store = configureStore({
-          reducer: {
-            learningAssistant: learningAssistantReducer,
-          },
-        });
-
         render(
           <BrowserRouter>
             <Chat
@@ -145,7 +166,7 @@ describe('Chat', () => {
           { store },
         );
 
-        const chat = screen.queryByTestId('toggle-button');
+        const chat = screen.queryByTestId(mockXpertTestId);
         if (test.isVisible) {
           expect(chat).toBeInTheDocument();
         } else {
@@ -153,5 +174,113 @@ describe('Chat', () => {
         }
       },
     );
+  });
+
+  it('if course end date has passed, component should not be visible', async () => {
+    store = await initializeTestStore({
+      specialExams: {
+        activeAttempt: {
+          attempt_id: 1,
+        },
+      },
+      courseMetadata: Factory.build('courseMetadata', {
+        start: '2014-02-03T05:00:00Z',
+        end: '2014-02-05T05:00:00Z',
+      }),
+    });
+
+    render(
+      <BrowserRouter>
+        <Chat
+          enrollmentMode="verified"
+          isStaff
+          enabled
+          courseId={courseId}
+          contentToolsEnabled={false}
+        />
+      </BrowserRouter>,
+      { store },
+    );
+
+    const chat = screen.queryByTestId(mockXpertTestId);
+    expect(chat).not.toBeInTheDocument();
+  });
+
+  it('if learner has active exam attempt, component should not be visible', async () => {
+    store = await initializeTestStore({
+      specialExams: {
+        activeAttempt: {
+          attempt_id: 1,
+        },
+      },
+    });
+
+    render(
+      <BrowserRouter>
+        <Chat
+          enrollmentMode="verified"
+          isStaff
+          enabled
+          courseId={courseId}
+          contentToolsEnabled={false}
+        />
+      </BrowserRouter>,
+      { store },
+    );
+
+    const chat = screen.queryByTestId(mockXpertTestId);
+    expect(chat).toBeInTheDocument();
+  });
+
+  it('displays component for audit learner if explicitly enabled', async () => {
+    getConfig.mockImplementation(() => ({ ENABLE_XPERT_AUDIT: true }));
+
+    store = await initializeTestStore({
+      courseMetadata: Factory.build('courseMetadata', {
+        access_expiration: { expiration_date: '' },
+      }),
+    });
+
+    render(
+      <BrowserRouter>
+        <Chat
+          enrollmentMode="audit"
+          isStaff={false}
+          enabled
+          courseId={courseId}
+          contentToolsEnabled={false}
+        />
+      </BrowserRouter>,
+      { store },
+    );
+
+    const chat = screen.queryByTestId(mockXpertTestId);
+    expect(chat).toBeInTheDocument();
+  });
+
+  it('does not display component for audit learner if access deadline has passed', async () => {
+    getConfig.mockImplementation(() => ({ ENABLE_XPERT_AUDIT: true }));
+
+    store = await initializeTestStore({
+      courseMetadata: Factory.build('courseMetadata', {
+        access_expiration: { expiration_date: '2014-02-03T05:00:00Z' },
+      }),
+    });
+
+    render(
+      <BrowserRouter>
+        <Chat
+          enrollmentMode="audit"
+          isStaff={false}
+          enabled
+          courseId={courseId}
+          contentToolsEnabled={false}
+        />
+      </BrowserRouter>,
+      { store },
+    );
+
+    const chat = screen.queryByTestId(mockXpertTestId);
+    expect(chat).not.toBeInTheDocument();
   });
 });

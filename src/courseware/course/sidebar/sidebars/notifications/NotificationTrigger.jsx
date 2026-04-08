@@ -1,20 +1,20 @@
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
+import { useContext, useEffect } from 'react';
+import { useIntl } from '@edx/frontend-platform/i18n';
 import PropTypes from 'prop-types';
-import React, { useContext, useEffect } from 'react';
-import { getLocalStorage, setLocalStorage } from '../../../../../data/localStorage';
-import { getSessionStorage, setSessionStorage } from '../../../../../data/sessionStorage';
+
+import { WIDGETS } from '@src/constants';
+import { getLocalStorage, setLocalStorage } from '@src/data/localStorage';
 import messages from '../../../messages';
 import SidebarTriggerBase from '../../common/TriggerBase';
 import SidebarContext from '../../SidebarContext';
-
 import NotificationIcon from './NotificationIcon';
 
-export const ID = 'NOTIFICATIONS';
+export const ID = WIDGETS.NOTIFICATIONS;
 
 const NotificationTrigger = ({
-  intl,
   onClick,
 }) => {
+  const intl = useIntl();
   const {
     courseId,
     notificationStatus,
@@ -47,25 +47,15 @@ const NotificationTrigger = ({
     UpdateUpgradeNotificationLastSeen();
   });
 
-  const handleClick = () => {
-    if (getSessionStorage(`notificationTrayStatus.${courseId}`) === 'open') {
-      setSessionStorage(`notificationTrayStatus.${courseId}`, 'closed');
-    } else {
-      setSessionStorage(`notificationTrayStatus.${courseId}`, 'open');
-    }
-    onClick();
-  };
-
   return (
-    <SidebarTriggerBase onClick={handleClick} ariaLabel={intl.formatMessage(messages.openNotificationTrigger)}>
+    <SidebarTriggerBase onClick={onClick} ariaLabel={intl.formatMessage(messages.openNotificationTrigger)}>
       <NotificationIcon status={notificationStatus} notificationColor="bg-danger-500" />
     </SidebarTriggerBase>
   );
 };
 
 NotificationTrigger.propTypes = {
-  intl: intlShape.isRequired,
   onClick: PropTypes.func.isRequired,
 };
 
-export default injectIntl(NotificationTrigger);
+export default NotificationTrigger;

@@ -1,28 +1,28 @@
-/* eslint-disable no-use-before-define */
-import React, {
-  useEffect, useState,
-} from 'react';
+/* eslint-disable @typescript-eslint/no-use-before-define */
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
+
 import {
   sendTrackEvent,
   sendTrackingLogEvent,
 } from '@edx/frontend-platform/analytics';
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
+import { useIntl } from '@edx/frontend-platform/i18n';
 import { useSelector } from 'react-redux';
 import SequenceExamWrapper from '@edx/frontend-lib-special-exams';
-import { breakpoints, useWindowSize } from '@edx/paragon';
 
-import PageLoading from '../../../generic/PageLoading';
-import { useModel } from '../../../generic/model-store';
-import { useSequenceBannerTextAlert, useSequenceEntranceExamAlert } from '../../../alerts/sequence-alerts/hooks';
+import PageLoading from '@src/generic/PageLoading';
+import { useModel } from '@src/generic/model-store';
+import { useSequenceBannerTextAlert, useSequenceEntranceExamAlert } from '@src/alerts/sequence-alerts/hooks';
+import SequenceContainerSlot from '@src/plugin-slots/SequenceContainerSlot';
+import { CourseOutlineSidebarSlot } from '@src/plugin-slots/CourseOutlineSidebarSlot';
+import { CourseOutlineSidebarTriggerSlot } from '@src/plugin-slots/CourseOutlineSidebarTriggerSlot';
+import { NotificationsDiscussionsSidebarSlot } from '@src/plugin-slots/NotificationsDiscussionsSidebarSlot';
+import SequenceNavigationSlot from '@src/plugin-slots/SequenceNavigationSlot';
 
 import CourseLicense from '../course-license';
-import Sidebar from '../sidebar/Sidebar';
-import SidebarTriggers from '../sidebar/SidebarTriggers';
 import messages from './messages';
 import HiddenAfterDue from './hidden-after-due';
-import { SequenceNavigation, UnitNavigation } from './sequence-navigation';
+import { UnitNavigation } from './sequence-navigation';
 import SequenceContent from './SequenceContent';
 
 const Sequence = ({
@@ -32,35 +32,38 @@ const Sequence = ({
   unitNavigationHandler,
   nextSequenceHandler,
   previousSequenceHandler,
-  intl,
 }) => {
-  const course = useModel('coursewareMeta', courseId);
+  const intl = useIntl();
+  const {
+    canAccessProctoredExams,
+    license,
+  } = useModel('coursewareMeta', courseId);
   const {
     isStaff,
     originalUserIsStaff,
   } = useModel('courseHomeMeta', courseId);
   const sequence = useModel('sequences', sequenceId);
+  const section = useModel('sections', sequence ? sequence.sectionId : null);
   const unit = useModel('units', unitId);
   const sequenceStatus = useSelector(state => state.courseware.sequenceStatus);
   const sequenceMightBeUnit = useSelector(state => state.courseware.sequenceMightBeUnit);
-  const shouldDisplayNotificationTriggerInSequence = useWindowSize().width < breakpoints.small.minWidth;
 
   const handleNext = () => {
     const nextIndex = sequence.unitIds.indexOf(unitId) + 1;
-    if (nextIndex < sequence.unitIds.length) {
-      const newUnitId = sequence.unitIds[nextIndex];
-      handleNavigate(newUnitId);
-    } else {
+    const newUnitId = sequence.unitIds[nextIndex];
+    handleNavigate(newUnitId);
+
+    if (nextIndex >= sequence.unitIds.length) {
       nextSequenceHandler();
     }
   };
 
   const handlePrevious = () => {
     const previousIndex = sequence.unitIds.indexOf(unitId) - 1;
-    if (previousIndex >= 0) {
-      const newUnitId = sequence.unitIds[previousIndex];
-      handleNavigate(newUnitId);
-    } else {
+    const newUnitId = sequence.unitIds[previousIndex];
+    handleNavigate(newUnitId);
+
+    if (previousIndex < 0) {
       previousSequenceHandler();
     }
   };
@@ -85,6 +88,30 @@ const Sequence = ({
     }
     sendTrackEvent(eventName, payload);
     sendTrackingLogEvent(eventName, payload);
+  };
+
+  /* istanbul ignore next */
+  const nextHandler = () => {
+    logEvent('edx.ui.lms.sequence.next_selected', 'top');
+    handleNext();
+  };
+
+  /* istanbul ignore next */
+  const previousHandler = () => {
+    logEvent('edx.ui.lms.sequence.previous_selected', 'top');
+    handlePrevious();
+  };
+
+  /* istanbul ignore next */
+  const onNavigate = (destinationUnitId) => {
+    logEvent('edx.ui.lms.sequence.tab_selected', 'top', destinationUnitId);
+    handleNavigate(destinationUnitId);
+  };
+
+  const sequenceNavProps = {
+    nextHandler,
+    previousHandler,
+    onNavigate,
   };
 
   useSequenceBannerTextAlert(sequenceId);
@@ -139,72 +166,89 @@ const Sequence = ({
 
   const gated = sequence && sequence.gatedContent !== undefined && sequence.gatedContent.gated;
 
-  const defaultContent = (
-    <div className="sequence-container d-inline-flex flex-row w-100">
-      <div className={classNames('sequence w-100', { 'position-relative': shouldDisplayNotificationTriggerInSequence })}>
-        <div className="sequence-navigation-container">
-          <SequenceNavigation
-            sequenceId={sequenceId}
-            unitId={unitId}
-            className="mb-4"
-            nextHandler={() => {
-              logEvent('edx.ui.lms.sequence.next_selected', 'top');
-              handleNext();
-            }}
-            onNavigate={(destinationUnitId) => {
-              logEvent('edx.ui.lms.sequence.tab_selected', 'top', destinationUnitId);
-              handleNavigate(destinationUnitId);
-            }}
-            previousHandler={() => {
-              logEvent('edx.ui.lms.sequence.previous_selected', 'top');
-              handlePrevious();
-            }}
-          />
-          {shouldDisplayNotificationTriggerInSequence && <SidebarTriggers />}
-        </div>
+  const renderUnitNavigation = (isAtTop) => (
+    <UnitNavigation
+      courseId={courseId}
+      sequenceId={sequenceId}
+      unitId={unitId}
+      isAtTop={isAtTop}
+      onClickPrevious={() => {
+        logEvent('edx.ui.lms.sequence.previous_selected', 'bottom');
+        handlePrevious();
+      }}
+      onClickNext={() => {
+        logEvent('edx.ui.lms.sequence.next_selected', 'bottom');
+        handleNext();
+      }}
+    />
+  );
 
-        <div className="unit-container flex-grow-1">
-          <SequenceContent
-            courseId={courseId}
-            gated={gated}
-            sequenceId={sequenceId}
-            unitId={unitId}
-            unitLoadedHandler={handleUnitLoaded}
-          />
-          {unitHasLoaded && (
-          <UnitNavigation
-            sequenceId={sequenceId}
-            unitId={unitId}
-            onClickPrevious={() => {
-              logEvent('edx.ui.lms.sequence.previous_selected', 'bottom');
-              handlePrevious();
-            }}
-            onClickNext={() => {
-              logEvent('edx.ui.lms.sequence.next_selected', 'bottom');
-              handleNext();
-            }}
-          />
-          )}
+  const defaultContent = (
+    <>
+      <div className="sequence-container d-inline-flex flex-row w-100">
+        <CourseOutlineSidebarTriggerSlot
+          sectionId={section ? section.id : null}
+          sequenceId={sequenceId}
+          isStaff={isStaff}
+          unitId={unitId}
+        />
+        <CourseOutlineSidebarSlot />
+        <div className="sequence w-100">
+          <div className="sequence-navigation-container">
+            {/**
+             SequenceNavigationSlot renders nothing by default.
+             However, we still pass nextHandler, previousHandler, and onNavigate,
+             because, as per the slot's contract, if this slot is replaced
+             with the default SequenceNavigation component, these props are required.
+             These handlers are excluded from test coverage via istanbul ignore,
+             since they are not used unless the slot is overridden.
+             */}
+            <SequenceNavigationSlot
+              sequenceId={sequenceId}
+              unitId={unitId}
+              {...{
+                ...sequenceNavProps,
+                nextSequenceHandler,
+                handleNavigate,
+              }}
+            />
+          </div>
+
+          <div className="unit-container flex-grow-1 pt-4">
+            <SequenceContent
+              courseId={courseId}
+              gated={gated}
+              sequenceId={sequenceId}
+              unitId={unitId}
+              unitLoadedHandler={handleUnitLoaded}
+              isOriginalUserStaff={originalUserIsStaff}
+              renderUnitNavigation={renderUnitNavigation}
+            />
+            {unitHasLoaded && renderUnitNavigation(false)}
+          </div>
         </div>
+        <NotificationsDiscussionsSidebarSlot courseId={courseId} />
       </div>
-      <Sidebar />
-    </div>
+      <SequenceContainerSlot courseId={courseId} unitId={unitId} />
+    </>
   );
 
   if (sequenceStatus === 'loaded') {
     return (
-      <div>
-        <SequenceExamWrapper
-          sequence={sequence}
-          courseId={courseId}
-          isStaff={isStaff}
-          originalUserIsStaff={originalUserIsStaff}
-          canAccessProctoredExams={course.canAccessProctoredExams}
-        >
-          {defaultContent}
-        </SequenceExamWrapper>
-        <CourseLicense license={course.license || undefined} />
-      </div>
+      <>
+        <div className="d-flex flex-column flex-grow-1 justify-content-center">
+          <SequenceExamWrapper
+            sequence={sequence}
+            courseId={courseId}
+            isStaff={isStaff}
+            originalUserIsStaff={originalUserIsStaff}
+            canAccessProctoredExams={canAccessProctoredExams}
+          >
+            {defaultContent}
+          </SequenceExamWrapper>
+        </div>
+        <CourseLicense license={license || undefined} />
+      </>
     );
   }
 
@@ -223,7 +267,6 @@ Sequence.propTypes = {
   unitNavigationHandler: PropTypes.func.isRequired,
   nextSequenceHandler: PropTypes.func.isRequired,
   previousSequenceHandler: PropTypes.func.isRequired,
-  intl: intlShape.isRequired,
 };
 
 Sequence.defaultProps = {
@@ -231,4 +274,4 @@ Sequence.defaultProps = {
   unitId: null,
 };
 
-export default injectIntl(Sequence);
+export default Sequence;

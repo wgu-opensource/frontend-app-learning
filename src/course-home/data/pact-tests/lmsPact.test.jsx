@@ -46,7 +46,6 @@ describe('Course Home Service', () => {
           willRespondWith: {
             status: 200,
             body: {
-              can_show_upgrade_sock: boolean(false),
               verified_mode: like({
                 access_expiration_date: null,
                 currency: 'USD',
@@ -89,11 +88,11 @@ describe('Course Home Service', () => {
               }),
               title: string('Demonstration Course'),
               username: string('edx'),
+              has_course_author_access: boolean(true),
             },
           },
         });
         const normalizedTabData = {
-          canShowUpgradeSock: false,
           verifiedMode: {
             accessExpirationDate: null,
             currency: 'USD',
@@ -133,6 +132,7 @@ describe('Course Home Service', () => {
           ],
           title: 'Demonstration Course',
           username: 'edx',
+          hasCourseAuthorAccess: true,
         };
         const response = getCourseHomeCourseMetadata(courseId, 'outline');
         expect(response).toBeTruthy();

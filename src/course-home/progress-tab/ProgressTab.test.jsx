@@ -1,9 +1,9 @@
 import React from 'react';
 import { Factory } from 'rosie';
-import { getConfig } from '@edx/frontend-platform';
+import { getConfig, setConfig } from '@edx/frontend-platform';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
-import { breakpoints } from '@edx/paragon';
+import { breakpoints } from '@openedx/paragon';
 import MockAdapter from 'axios-mock-adapter';
 
 import {
@@ -16,8 +16,26 @@ import ProgressTab from './ProgressTab';
 import LoadedTabPage from '../../tab-page/LoadedTabPage';
 import messages from './grades/messages';
 
+const mockCoursewareSearchParams = jest.fn();
+
 initializeMockApp();
 jest.mock('@edx/frontend-platform/analytics');
+jest.mock('../courseware-search/hooks', () => ({
+  ...jest.requireActual('../courseware-search/hooks'),
+  useCoursewareSearchParams: () => mockCoursewareSearchParams,
+}));
+
+const coursewareSearch = {
+  query: '',
+  filter: '',
+  setQuery: jest.fn(),
+  setFilter: jest.fn(),
+  clearSearchParams: jest.fn(),
+};
+
+const mockSearchParams = ((props = coursewareSearch) => {
+  mockCoursewareSearchParams.mockReturnValue(props);
+});
 
 describe('Progress Tab', () => {
   let axiosMock;
@@ -58,7 +76,14 @@ describe('Progress Tab', () => {
     axiosMock.onGet(progressUrl).reply(200, defaultTabData);
     axiosMock.onGet(masqueradeUrl).reply(200, { success: true });
 
+    // Mock courseware search params
+    mockSearchParams();
+
     logUnhandledRequests(axiosMock);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('Related links', () => {
@@ -86,7 +111,7 @@ describe('Progress Tab', () => {
       await fetchAndRender();
       sendTrackEvent.mockClear();
 
-      const outlineTabLink = screen.getAllByRole('link', { name: 'Course Outline' });
+      const outlineTabLink = screen.getAllByRole('link', { name: 'Course outline' });
       fireEvent.click(outlineTabLink[1]); // outlineTabLink[0] corresponds to the link in the DetailedGrades component
 
       expect(sendTrackEvent).toHaveBeenCalledTimes(1);
@@ -446,9 +471,12 @@ describe('Progress Tab', () => {
       await fetchAndRender();
       expect(screen.getByText('limited feature')).toBeInTheDocument();
       expect(screen.getByText('Unlock to work towards a certificate.')).toBeInTheDocument();
-      expect(screen.queryAllByText('You have limited access to graded assignments as part of the audit track in this course.')).toHaveLength(2);
+      expect(screen.queryAllByText(
+        'You have limited access to graded assignments as part of the audit track in this course.',
+        { exact: false },
+      )).toHaveLength(2);
 
-      expect(screen.queryAllByTestId('blocked-icon')).toHaveLength(4);
+      expect(screen.queryAllByTestId('locked-icon')).toHaveLength(4);
     });
 
     it('does not render subsections for which showGrades is false', async () => {
@@ -520,6 +548,111 @@ describe('Progress Tab', () => {
       await fetchAndRender();
       expect(screen.getByText('Grades & Credit')).toBeInTheDocument();
     });
+
+    it('does not render ungraded subsections when SHOW_UNGRADED_ASSIGNMENT_PROGRESS is false', async () => {
+      // The second assignment has has_graded_assignment set to false, so it should not be shown.
+      setTabData({
+        section_scores: [
+          {
+            display_name: 'First section',
+            subsections: [
+              {
+                assignment_type: 'Homework',
+                block_key: 'block-v1:edX+DemoX+Demo_Course+type@sequential+block@12345',
+                display_name: 'First subsection',
+                learner_has_access: true,
+                has_graded_assignment: true,
+                num_points_earned: 1,
+                num_points_possible: 2,
+                percent_graded: 1.0,
+                show_correctness: 'always',
+                show_grades: true,
+                url: 'http://learning.edx.org/course/course-v1:edX+Test+run/first_subsection',
+              },
+            ],
+          },
+          {
+            display_name: 'Second section',
+            subsections: [
+              {
+                assignment_type: 'Homework',
+                display_name: 'Second subsection',
+                learner_has_access: true,
+                has_graded_assignment: false,
+                num_points_earned: 1,
+                num_points_possible: 1,
+                percent_graded: 1.0,
+                show_correctness: 'always',
+                show_grades: true,
+                url: 'http://learning.edx.org/course/course-v1:edX+Test+run/second_subsection',
+              },
+            ],
+          },
+        ],
+      });
+
+      await fetchAndRender();
+      expect(screen.getByText('First subsection')).toBeInTheDocument();
+      expect(screen.queryByText('Second subsection')).not.toBeInTheDocument();
+    });
+
+    it('renders both graded and ungraded subsections when SHOW_UNGRADED_ASSIGNMENT_PROGRESS is true', async () => {
+      // The second assignment has has_graded_assignment set to false.
+      setConfig({
+        ...getConfig(),
+        SHOW_UNGRADED_ASSIGNMENT_PROGRESS: true,
+      });
+
+      setTabData({
+        section_scores: [
+          {
+            display_name: 'First section',
+            subsections: [
+              {
+                assignment_type: 'Homework',
+                block_key: 'block-v1:edX+DemoX+Demo_Course+type@sequential+block@12345',
+                display_name: 'First subsection',
+                learner_has_access: true,
+                has_graded_assignment: true,
+                num_points_earned: 1,
+                num_points_possible: 2,
+                percent_graded: 1.0,
+                show_correctness: 'always',
+                show_grades: true,
+                url: 'http://learning.edx.org/course/course-v1:edX+Test+run/first_subsection',
+              },
+            ],
+          },
+          {
+            display_name: 'Second section',
+            subsections: [
+              {
+                assignment_type: 'Homework',
+                display_name: 'Second subsection',
+                learner_has_access: true,
+                has_graded_assignment: false,
+                num_points_earned: 1,
+                num_points_possible: 1,
+                percent_graded: 1.0,
+                show_correctness: 'always',
+                show_grades: true,
+                url: 'http://learning.edx.org/course/course-v1:edX+Test+run/second_subsection',
+              },
+            ],
+          },
+        ],
+      });
+
+      await fetchAndRender();
+      expect(screen.getByText('First subsection')).toBeInTheDocument();
+      expect(screen.getByText('Second subsection')).toBeInTheDocument();
+
+      // reset config for other tests
+      setConfig({
+        ...getConfig(),
+        SHOW_UNGRADED_ASSIGNMENT_PROGRESS: false,
+      });
+    });
   });
 
   describe('Grade Summary', () => {
@@ -528,143 +661,133 @@ describe('Progress Tab', () => {
       expect(screen.getByText('Grade summary')).toBeInTheDocument();
     });
 
-    it('does not render Grade Summary when assignment policies are not populated', async () => {
+    it('does not render Grade Summary when assignment type grade summary is not populated', async () => {
       setTabData({
-        grading_policy: {
-          assignment_policies: [],
-          grade_range: {
-            pass: 0.75,
-          },
-        },
-        section_scores: [],
+        assignment_type_grade_summary: [],
       });
       await fetchAndRender();
       expect(screen.queryByText('Grade summary')).not.toBeInTheDocument();
     });
 
-    it('calculates grades correctly when number of droppable assignments equals total number of assignments', async () => {
+    it('shows lock icon when all subsections of assignment type are hidden', async () => {
       setTabData({
         grading_policy: {
           assignment_policies: [
-            {
-              num_droppable: 2,
-              num_total: 2,
-              short_label: 'HW',
-              type: 'Homework',
-              weight: 1,
-            },
-          ],
-          grade_range: {
-            pass: 0.75,
-          },
-        },
-      });
-      await fetchAndRender();
-      expect(screen.getByText('Grade summary')).toBeInTheDocument();
-      // The row is comprised of "{Assignment type} {footnote - optional} {weight} {grade} {weighted grade}"
-      expect(screen.getByRole('row', { name: 'Homework 1 100% 0% 0%' })).toBeInTheDocument();
-    });
-    it('calculates grades correctly when number of droppable assignments is less than total number of assignments', async () => {
-      await fetchAndRender();
-      expect(screen.getByText('Grade summary')).toBeInTheDocument();
-      // The row is comprised of "{Assignment type} {footnote - optional} {weight} {grade} {weighted grade}"
-      expect(screen.getByRole('row', { name: 'Homework 1 100% 100% 100%' })).toBeInTheDocument();
-    });
-    it('calculates grades correctly when number of droppable assignments is zero', async () => {
-      setTabData({
-        grading_policy: {
-          assignment_policies: [
-            {
-              num_droppable: 0,
-              num_total: 2,
-              short_label: 'HW',
-              type: 'Homework',
-              weight: 1,
-            },
-          ],
-          grade_range: {
-            pass: 0.75,
-          },
-        },
-      });
-      await fetchAndRender();
-      expect(screen.getByText('Grade summary')).toBeInTheDocument();
-      // The row is comprised of "{Assignment type} {weight} {grade} {weighted grade}"
-      expect(screen.getByRole('row', { name: 'Homework 100% 50% 50%' })).toBeInTheDocument();
-    });
-    it('calculates grades correctly when number of total assignments is less than the number of assignments created', async () => {
-      setTabData({
-        grading_policy: {
-          assignment_policies: [
-            {
-              num_droppable: 1,
-              num_total: 1, // two assignments created in the factory, but 1 is expected per Studio settings
-              short_label: 'HW',
-              type: 'Homework',
-              weight: 1,
-            },
-          ],
-          grade_range: {
-            pass: 0.75,
-          },
-        },
-      });
-      await fetchAndRender();
-      expect(screen.getByText('Grade summary')).toBeInTheDocument();
-      // The row is comprised of "{Assignment type} {footnote - optional} {weight} {grade} {weighted grade}"
-      expect(screen.getByRole('row', { name: 'Homework 1 100% 100% 100%' })).toBeInTheDocument();
-    });
-    it('calculates grades correctly when number of total assignments is greater than the number of assignments created', async () => {
-      setTabData({
-        grading_policy: {
-          assignment_policies: [
-            {
-              num_droppable: 0,
-              num_total: 5, // two assignments created in the factory, but 5 are expected per Studio settings
-              short_label: 'HW',
-              type: 'Homework',
-              weight: 1,
-            },
-          ],
-          grade_range: {
-            pass: 0.75,
-          },
-        },
-      });
-      await fetchAndRender();
-      expect(screen.getByText('Grade summary')).toBeInTheDocument();
-      // The row is comprised of "{Assignment type} {weight} {grade} {weighted grade}"
-      expect(screen.getByRole('row', { name: 'Homework 100% 20% 20%' })).toBeInTheDocument();
-    });
-    it('calculates weighted grades correctly', async () => {
-      setTabData({
-        grading_policy: {
-          assignment_policies: [
-            {
-              num_droppable: 1,
-              num_total: 2,
-              short_label: 'HW',
-              type: 'Homework',
-              weight: 0.5,
-            },
             {
               num_droppable: 0,
               num_total: 1,
-              short_label: 'Ex',
-              type: 'Exam',
-              weight: 0.5,
+              short_label: 'Final',
+              type: 'Final Exam',
+              weight: 1,
             },
           ],
           grade_range: {
             pass: 0.75,
           },
         },
+        assignment_type_grade_summary: [
+          {
+            type: 'Final Exam',
+            weight: 0.4,
+            average_grade: 0.0,
+            weighted_grade: 0.0,
+            last_grade_publish_date: '2025-10-15T14:17:04.368903Z',
+            has_hidden_contribution: 'all',
+            short_label: 'Final',
+            num_droppable: 0,
+          },
+        ],
       });
       await fetchAndRender();
-      expect(screen.getByText('Grade summary')).toBeInTheDocument();
-      // The row is comprised of "{Assignment type} {footnote - optional} {weight} {grade} {weighted grade}"
-      expect(screen.getByRole('row', { name: 'Homework 1 50% 100% 50%' })).toBeInTheDocument();
-      expect(screen.getByRole('row', { name: 'Exam 50% 0% 0%' })).toBeInTheDocument();
+      // Should show lock icon for grade and weighted grade
+      expect(screen.getAllByTestId('lock-icon')).toHaveLength(2);
+    });
+
+    it('shows percent plus hidden grades when some subsections of assignment type are hidden', async () => {
+      setTabData({
+        grading_policy: {
+          assignment_policies: [
+            {
+              num_droppable: 0,
+              num_total: 2,
+              short_label: 'HW',
+              type: 'Homework',
+              weight: 1,
+            },
+          ],
+          grade_range: {
+            pass: 0.75,
+          },
+        },
+        assignment_type_grade_summary: [
+          {
+            type: 'Homework',
+            weight: 1,
+            average_grade: 0.25,
+            weighted_grade: 0.25,
+            last_grade_publish_date: '2025-10-15T14:17:04.368903Z',
+            has_hidden_contribution: 'some',
+            short_label: 'HW',
+            num_droppable: 0,
+          },
+        ],
+      });
+      await fetchAndRender();
+      // Should show percent + hidden scores for grade and weighted grade
+      const hiddenScoresCells = screen.getAllByText(/% \+ Hidden Scores/);
+      expect(hiddenScoresCells).toHaveLength(2);
+      // Only correct visible scores should be shown (from subsection2)
+      // The correct visible score is 1/4 = 0.25 -> 25%
+      expect(hiddenScoresCells[0]).toHaveTextContent('25% + Hidden Scores');
+      expect(hiddenScoresCells[1]).toHaveTextContent('25% + Hidden Scores');
+    });
+
+    it('displays a warning message with the latest due date when not all assignment scores are included in the total grade', async () => {
+      setTabData({
+        grading_policy: {
+          assignment_policies: [
+            {
+              num_droppable: 0,
+              num_total: 2,
+              short_label: 'HW',
+              type: 'Homework',
+              weight: 1,
+            },
+          ],
+          grade_range: {
+            pass: 0.75,
+          },
+        },
+        assignment_type_grade_summary: [
+          {
+            type: 'Homework',
+            weight: 1,
+            average_grade: 1,
+            weighted_grade: 1,
+            last_grade_publish_date: tomorrow.toISOString(),
+            has_hidden_contribution: 'none',
+            short_label: 'HW',
+            num_droppable: 0,
+          },
+        ],
+      });
+
+      await fetchAndRender();
+
+      const formattedDateTime = new Intl.DateTimeFormat('en', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        timeZoneName: 'short',
+      }).format(tomorrow);
+
+      expect(
+        screen.getByText(
+          `Some assignment scores are not yet included in your total grade. These grades will be released by ${formattedDateTime}.`,
+        ),
+      ).toBeInTheDocument();
     });
 
     it('renders override notice', async () => {
@@ -763,7 +886,7 @@ describe('Progress Tab', () => {
       sendTrackEvent.mockClear();
       expect(screen.getByText('Detailed grades')).toBeInTheDocument();
 
-      const outlineLink = screen.getAllByRole('link', { name: 'Course Outline' })[0];
+      const outlineLink = screen.getAllByRole('link', { name: 'Course outline' })[0];
       fireEvent.click(outlineLink);
 
       expect(sendTrackEvent).toHaveBeenCalledTimes(1);
@@ -784,7 +907,7 @@ describe('Progress Tab', () => {
 
       // Open the problem score drawer
       fireEvent.click(problemScoreDrawerToggle);
-      expect(screen.getByText('Problem Scores:')).toBeInTheDocument();
+      expect(screen.getAllByText('Graded Scores:').length).toBeGreaterThan(1);
       expect(screen.getAllByText('0/1')).toHaveLength(3);
     });
 
@@ -795,6 +918,14 @@ describe('Progress Tab', () => {
       await fetchAndRender();
       expect(screen.getByText('Detailed grades')).toBeInTheDocument();
       expect(screen.getByText('You currently have no graded problem scores.')).toBeInTheDocument();
+    });
+
+    it('renders Detailed Grades table when section scores are populated', async () => {
+      await fetchAndRender();
+      expect(screen.getByText('Detailed grades')).toBeInTheDocument();
+
+      expect(screen.getByText('First subsection'));
+      expect(screen.getByText('Second subsection'));
     });
   });
 

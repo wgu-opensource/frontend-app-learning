@@ -1,7 +1,4 @@
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
 import '@testing-library/jest-dom';
-import '@testing-library/jest-dom/extend-expect';
 import './courseware/data/__factories__';
 import './course-home/data/__factories__';
 import { getConfig, mergeConfig } from '@edx/frontend-platform';
@@ -14,17 +11,33 @@ import { render as rtlRender } from '@testing-library/react';
 import { configureStore } from '@reduxjs/toolkit';
 import MockAdapter from 'axios-mock-adapter';
 import { reducer as learningAssistantReducer } from '@edx/frontend-lib-learning-assistant';
-import AppProvider from '@edx/frontend-platform/react/AppProvider';
+import { reducer as specialExamsReducer } from '@edx/frontend-lib-special-exams';
+import { AppProvider } from '@edx/frontend-platform/react';
 import { reducer as courseHomeReducer } from './course-home/data';
 import { reducer as coursewareReducer } from './courseware/data/slice';
+import { reducer as recommendationsReducer } from './courseware/course/course-exit/data/slice';
+import { reducer as toursReducer } from './product-tours/data';
 import { reducer as modelsReducer } from './generic/model-store';
 import { UserMessagesProvider } from './generic/user-messages';
 
 import messages from './i18n';
 import { fetchCourse, fetchSequence } from './courseware/data';
+import { getCourseOutlineStructure } from './courseware/data/thunks';
 import { appendBrowserTimezoneToUrl, executeThunk } from './utils';
 import buildSimpleCourseAndSequenceMetadata from './courseware/data/__factories__/sequenceMetadata.factory';
 import { buildOutlineFromBlocks } from './courseware/data/__factories__/learningSequencesOutline.factory';
+import MockedPluginSlot from './tests/MockedPluginSlot';
+
+jest.mock('@openedx/frontend-plugin-framework', () => ({
+  ...jest.requireActual('@openedx/frontend-plugin-framework'),
+  Plugin: () => 'Plugin',
+  PluginSlot: MockedPluginSlot,
+}));
+
+jest.mock('@src/generic/plugin-store', () => ({
+  ...jest.requireActual('@src/generic/plugin-store'),
+  usePluginsCallback: jest.fn((_, cb) => cb),
+}));
 
 class MockLoggingService {
   // eslint-disable-next-line no-console
@@ -37,6 +50,27 @@ class MockLoggingService {
 window.getComputedStyle = jest.fn(() => ({
   getPropertyValue: jest.fn(),
 }));
+
+/* eslint-disable no-console */
+const supressWarningBlock = (callback) => {
+  const originalConsoleWarning = console.warn;
+  console.warn = jest.fn();
+  callback();
+  console.warn = originalConsoleWarning;
+};
+/* eslint-enable no-console */
+
+// Mocks for HTML Dialogs behavior. */
+// jsdom does not support HTML Dialogs yet: https://github.com/jsdom/jsdom/issues/3294
+HTMLDialogElement.prototype.show = jest.fn();
+HTMLDialogElement.prototype.showModal = jest.fn(function mock() {
+  const onShowModal = new CustomEvent('show_modal');
+  this.dispatchEvent(onShowModal);
+});
+HTMLDialogElement.prototype.close = jest.fn(function mock() {
+  const onClose = new CustomEvent('close');
+  this.dispatchEvent(onClose);
+});
 
 // Mock Intersection Observer which is unavailable in the context of a test.
 global.IntersectionObserver = jest.fn(function mockIntersectionObserver() {
@@ -51,22 +85,18 @@ export const authenticatedUser = {
   administrator: false,
 };
 
-export function initializeMockApp() {
-  mergeConfig({
-    CONTACT_URL: process.env.CONTACT_URL || null,
-    DISCUSSIONS_MFE_BASE_URL: process.env.DISCUSSIONS_MFE_BASE_URL || null,
-    INSIGHTS_BASE_URL: process.env.INSIGHTS_BASE_URL || null,
-    STUDIO_BASE_URL: process.env.STUDIO_BASE_URL || null,
-    TWITTER_URL: process.env.TWITTER_URL || null,
-    authenticatedUser: {
-      userId: 'abc123',
-      username: 'MockUser',
-      roles: [],
-      administrator: false,
-    },
-    SUPPORT_URL_ID_VERIFICATION: 'http://example.com',
-  });
+mergeConfig({
+  ...process.env,
+  authenticatedUser: {
+    userId: 'abc123',
+    username: 'MockUser',
+    roles: [],
+    administrator: false,
+  },
+  SUPPORT_URL_ID_VERIFICATION: 'http://example.com',
+});
 
+export function initializeMockApp() {
   const loggingService = configureLogging(MockLoggingService, {
     config: getConfig(),
   });
@@ -76,11 +106,13 @@ export function initializeMockApp() {
   });
 
   // i18n doesn't have a service class to return.
-  configureI18n({
+  // ignore missing/unexpect locale warnings from @edx/frontend-platform/i18n
+  // it is unnecessary and not relevant to the tests
+  supressWarningBlock(() => configureI18n({
     config: getConfig(),
     loggingService,
     messages,
-  });
+  }));
 
   return { loggingService, authService };
 }
@@ -118,6 +150,9 @@ export async function initializeTestStore(options = {}, overrideStore = true) {
       courseware: coursewareReducer,
       courseHome: courseHomeReducer,
       learningAssistant: learningAssistantReducer,
+      specialExams: specialExamsReducer,
+      recommendations: recommendationsReducer,
+      tours: toursReducer,
     },
   });
   if (overrideStore) {
@@ -128,7 +163,7 @@ export async function initializeTestStore(options = {}, overrideStore = true) {
   axiosMock.reset();
 
   const {
-    courseBlocks, sequenceBlocks, courseMetadata, sequenceMetadata, courseHomeMetadata,
+    courseBlocks, sequenceBlocks, unitBlocks, courseMetadata, sequenceMetadata, courseHomeMetadata,
   } = buildSimpleCourseAndSequenceMetadata(options);
 
   let courseMetadataUrl = `${getConfig().LMS_BASE_URL}/api/courseware/course/${courseMetadata.id}`;
@@ -137,14 +172,27 @@ export async function initializeTestStore(options = {}, overrideStore = true) {
   const learningSequencesUrlRegExp = new RegExp(`${getConfig().LMS_BASE_URL}/api/learning_sequences/v1/course_outline/*`);
   let courseHomeMetadataUrl = `${getConfig().LMS_BASE_URL}/api/course_home/course_metadata/${courseMetadata.id}`;
   const discussionConfigUrl = new RegExp(`${getConfig().LMS_BASE_URL}/api/discussion/v1/courses/*`);
+  const coursewareSidebarSettingsUrl = `${getConfig().LMS_BASE_URL}/courses/${courseMetadata.id}/courseware-navigation-sidebar/toggles/`;
+  const outlineSidebarUrl = `${getConfig().LMS_BASE_URL}/api/course_home/v1/navigation/${courseMetadata.id}`;
   courseHomeMetadataUrl = appendBrowserTimezoneToUrl(courseHomeMetadataUrl);
 
   const provider = options?.provider || 'legacy';
+  const enableCompletionTracking = options.enableCompletionTracking || { enable_completion_tracking: true };
 
   axiosMock.onGet(courseMetadataUrl).reply(200, courseMetadata);
   axiosMock.onGet(courseHomeMetadataUrl).reply(200, courseHomeMetadata);
   axiosMock.onGet(learningSequencesUrlRegExp).reply(200, buildOutlineFromBlocks(courseBlocks));
   axiosMock.onGet(discussionConfigUrl).reply(200, { provider });
+  axiosMock.onGet(coursewareSidebarSettingsUrl).reply(200, {
+    ...enableCompletionTracking,
+  });
+
+  axiosMock.onGet(outlineSidebarUrl).reply(200, {
+    ...courseBlocks,
+    ...sequenceBlocks,
+    ...unitBlocks,
+  });
+
   sequenceMetadata.forEach(metadata => {
     const sequenceMetadataUrl = `${getConfig().LMS_BASE_URL}/api/courseware/sequence/${metadata.item_id}`;
     axiosMock.onGet(sequenceMetadataUrl).reply(200, metadata);
@@ -154,8 +202,14 @@ export async function initializeTestStore(options = {}, overrideStore = true) {
 
   logUnhandledRequests(axiosMock);
 
-  // eslint-disable-next-line no-unused-expressions
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   !options.excludeFetchCourse && await executeThunk(fetchCourse(courseMetadata.id), store.dispatch);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  !options.excludeFetchOutlineSidebar && await executeThunk(
+    getCourseOutlineStructure(courseMetadata.id),
+    store.dispatch,
+  );
 
   if (!options.excludeFetchSequence) {
     await Promise.all(sequenceBlocks

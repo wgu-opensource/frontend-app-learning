@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Helmet } from 'react-helmet';
 
 import { getConfig } from '@edx/frontend-platform';
-import { useToggle } from '@edx/paragon';
+import { useToggle } from '@openedx/paragon';
 
 import { CourseTabsNavigation } from '../course-tabs';
 import { useModel } from '../generic/model-store';
@@ -29,6 +29,7 @@ const LoadedTabPage = ({
     tabs,
     title,
     verifiedMode,
+    hasCourseAuthorAccess,
   } = useModel('courseHomeMeta', courseId);
 
   // Logistration and enrollment alerts are only really used for the outline tab, but loaded here to put them above
@@ -58,6 +59,7 @@ const LoadedTabPage = ({
           courseId={courseId}
           unitId={unitId}
           tab={activeTabSlug}
+          isStudioButtonVisible={hasCourseAuthorAccess}
         />
       )}
       <StreakModal
@@ -69,7 +71,7 @@ const LoadedTabPage = ({
         streakDiscountCouponEnabled={streakDiscountCouponEnabled}
         verifiedMode={verifiedMode}
       />
-      <main id="main-content" className="d-flex flex-column flex-grow-1">
+      <main className="d-flex flex-column flex-grow-1">
         <AlertList
           topic="outline"
           className="mx-5 mt-3"
@@ -79,7 +81,7 @@ const LoadedTabPage = ({
           }}
         />
         <CourseTabsNavigation tabs={tabs} className="mb-3" activeTabSlug={activeTabSlug} />
-        <div className="container-xl">
+        <div id="main-content" className="container-xl">
           {children}
         </div>
       </main>

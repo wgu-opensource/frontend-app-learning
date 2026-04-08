@@ -1,0 +1,101 @@
+.outline-sidebar-wrapper {
+    width: 32.125rem;
+    max-width: 100%;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.outline-sidebar {
+    @media (--pgn-size-breakpoint-min-width-xl) {
+        left: 0;
+        top: 0;
+    }
+}
+
+.outline-sidebar-heading-wrapper {
+    border: 1px solid #d7d3d1;
+
+    &.sticky {
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 5;
+    }
+
+    .outline-sidebar-heading {
+        font-weight: var(--pgn-typography-font-weight-bold);
+    }
+}
+
+.course-sidebar-section {
+    background: var(--pgn-color-white);
+    border: 1px solid #d7d3d1;
+
+    button {
+        line-height: 1.75rem;
+
+        &.focus::before,
+        &:focus::before {
+            border-radius: 0;
+        }
+    }
+}
+
+.outline-sidebar-toggle-btn {
+    font-size: 1.5rem;
+
+    .collapsed & {
+        transform: scale(-1, 1);
+    }
+}
+
+#outline-sidebar-outline {
+    margin-top: -1px;
+
+    @media (--pgn-size-breakpoint-min-width-xl) {
+        margin-bottom: 0;
+    }
+
+    li {
+        font-size: 1rem;
+        line-height: 1.5rem;
+
+        .collapsible-trigger {
+            border-radius: 0;
+            padding: var(--pgn-spacing-spacer-3-5) var(--pgn-spacing-spacer-4) var(--pgn-spacing-spacer-3-5) var(--pgn-spacing-spacer-5);
+
+            @media (--pgn-size-breakpoint-max-width-sm) {
+                padding-left: var(--pgn-spacing-spacer-4);
+            }
+
+            &:hover {
+                background-color: var(--pgn-color-light-500);
+            }
+
+            .collapsible-icon {
+                margin-inline-start: initial;
+            }
+        }
+
+        &:last-child .pgn_collapsible {
+            margin-bottom: 0px !important;
+        }
+    }
+
+    .collapsible-body {
+        padding: 0;
+
+        ol li > a {
+            padding: var(--pgn-spacing-spacer-3-5) var(--pgn-spacing-spacer-4) var(--pgn-spacing-spacer-3-5) var(--pgn-spacing-spacer-5-5);
+
+            @media (--pgn-size-breakpoint-max-width-sm) {
+                padding-left: var(--pgn-spacing-spacer-4-5);
+            }
+
+            &:hover {
+                text-decoration: none;
+                background-color: var(--pgn-color-light-500);
+            }
+        }
+    }
+}

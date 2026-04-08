@@ -1,19 +1,15 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-
-import {
-  getLocale, injectIntl, intlShape, isRtl,
-} from '@edx/frontend-platform/i18n';
-import { DataTable } from '@edx/paragon';
+import { getLocale, isRtl, useIntl } from '@edx/frontend-platform/i18n';
+import { DataTable } from '@openedx/paragon';
+import { useContextId } from '../../../../data/hooks';
 
 import { useModel } from '../../../../generic/model-store';
 import messages from '../messages';
 import SubsectionTitleCell from './SubsectionTitleCell';
+import { showUngradedAssignments } from '../../utils';
 
-const DetailedGradesTable = ({ intl }) => {
-  const {
-    courseId,
-  } = useSelector(state => state.courseHome);
+const DetailedGradesTable = () => {
+  const intl = useIntl();
+  const courseId = useContextId();
 
   const {
     sectionScores,
@@ -24,9 +20,10 @@ const DetailedGradesTable = ({ intl }) => {
     sectionScores.map((chapter) => {
       const subsectionScores = chapter.subsections.filter(
         (subsection) => !!(
-          subsection.hasGradedAssignment
-          && subsection.showGrades
-          && (subsection.numPointsPossible > 0 || subsection.numPointsEarned > 0)),
+          (showUngradedAssignments() || subsection.hasGradedAssignment)
+            && subsection.showGrades
+            && (subsection.numPointsPossible > 0 || subsection.numPointsEarned > 0)
+        ),
       );
 
       if (subsectionScores.length === 0) {
@@ -66,8 +63,4 @@ const DetailedGradesTable = ({ intl }) => {
   );
 };
 
-DetailedGradesTable.propTypes = {
-  intl: intlShape.isRequired,
-};
-
-export default injectIntl(DetailedGradesTable);
+export default DetailedGradesTable;

@@ -2,9 +2,7 @@ import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 
-import {
-  FormattedDate, FormattedMessage, injectIntl, intlShape,
-} from '@edx/frontend-platform/i18n';
+import { FormattedDate, FormattedMessage, useIntl } from '@edx/frontend-platform/i18n';
 import { Helmet } from 'react-helmet';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -13,30 +11,31 @@ import {
   Button,
   Hyperlink,
   useWindowSize,
-} from '@edx/paragon';
-import { CheckCircle } from '@edx/paragon/icons';
+} from '@openedx/paragon';
+import { CheckCircle } from '@openedx/paragon/icons';
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 
 import CelebrationMobile from './assets/celebration_456x328.gif';
 import CelebrationDesktop from './assets/celebration_750x540.gif';
-import certificate from '../../../generic/assets/edX_certificate.png';
-import certificateLocked from '../../../generic/assets/edX_locked_certificate.png';
+import certificate from '../../../generic/assets/openedx_certificate.png';
+import certificateLocked from '../../../generic/assets/openedx_locked_certificate.png';
 import { FormattedPricing } from '../../../generic/upgrade-button';
 import messages from './messages';
 import { useModel } from '../../../generic/model-store';
 import { requestCert } from '../../../course-home/data/thunks';
 import ProgramCompletion from './ProgramCompletion';
-import DashboardFootnote from './DashboardFootnote';
 import UpgradeFootnote from './UpgradeFootnote';
 import SocialIcons from '../../social-share/SocialIcons';
 import { logClick, logVisit } from './utils';
 import { DashboardLink, IdVerificationSupportLink, ProfileLink } from '../../../shared/links';
-import CourseRecommendations from './CourseRecommendations';
+import DashboardFootnote from './DashboardFootnote';
+import { CourseRecommendationsSlot } from '../../../plugin-slots/CourseExitPluginSlots';
 
 const LINKEDIN_BLUE = '#2867B2';
 
-const CourseCelebration = ({ intl }) => {
+const CourseCelebration = () => {
+  const intl = useIntl();
   const wideScreen = useWindowSize().width >= breakpoints.medium.minWidth;
   const { courseId } = useSelector(state => state.courseware);
   const dispatch = useDispatch();
@@ -357,15 +356,11 @@ const CourseCelebration = ({ intl }) => {
             />
           ))}
           {footnote}
-          <CourseRecommendations variant={visitEvent} />
+          <CourseRecommendationsSlot variant={visitEvent} />
         </div>
       </div>
     </>
   );
 };
 
-CourseCelebration.propTypes = {
-  intl: intlShape.isRequired,
-};
-
-export default injectIntl(CourseCelebration);
+export default CourseCelebration;

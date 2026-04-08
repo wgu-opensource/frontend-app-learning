@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-constructed-context-values */
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
-import { breakpoints } from '@edx/paragon';
+import { breakpoints } from '@openedx/paragon';
 
 import MockAdapter from 'axios-mock-adapter';
 import React from 'react';
@@ -81,7 +81,7 @@ describe('NotificationTray', () => {
       .toBeInTheDocument();
   });
 
-  it('renders upgrade card', async () => {
+  it('includes notification_tray_slot', async () => {
     await fetchAndRender(
       <SidebarContext.Provider value={{
         currentSidebar: ID,
@@ -91,15 +91,7 @@ describe('NotificationTray', () => {
         <NotificationTray />
       </SidebarContext.Provider>,
     );
-    const UpgradeNotification = document.querySelector('.upgrade-notification');
-
-    expect(UpgradeNotification)
-      .toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Upgrade for $149' }))
-      .toBeInTheDocument();
-    expect(screen.queryByText('You have no new notifications at this time.'))
-      .not
-      .toBeInTheDocument();
+    expect(screen.getByTestId('org.openedx.frontend.learning.notification_tray.v1')).toBeInTheDocument();
   });
 
   it('renders no notifications message if no verified mode', async () => {
@@ -115,24 +107,6 @@ describe('NotificationTray', () => {
     );
     expect(screen.queryByText('You have no new notifications at this time.'))
       .toBeInTheDocument();
-  });
-
-  it('marks notification as seen 3 seconds later', async () => {
-    jest.useFakeTimers();
-    const onNotificationSeen = jest.fn();
-    await fetchAndRender(
-      <SidebarContext.Provider value={{
-        currentSidebar: ID,
-        courseId,
-        onNotificationSeen,
-      }}
-      >
-        <NotificationTray />
-      </SidebarContext.Provider>,
-    );
-    expect(onNotificationSeen).toHaveBeenCalledTimes(0);
-    jest.advanceTimersByTime(3000);
-    expect(onNotificationSeen).toHaveBeenCalledTimes(1);
   });
 
   it('renders notification tray with full screen "Back to course" at responsive view', async () => {
@@ -157,5 +131,21 @@ describe('NotificationTray', () => {
     fireEvent.click(responsiveCloseButton);
     expect(toggleNotificationTray)
       .toHaveBeenCalledTimes(1);
+  });
+
+  it('marks notification as seen 3 seconds later', async () => {
+    const onNotificationSeen = jest.fn();
+    await fetchAndRender(
+      <SidebarContext.Provider value={{
+        currentSidebar: ID,
+        courseId,
+        onNotificationSeen,
+      }}
+      >
+        <NotificationTray />
+      </SidebarContext.Provider>,
+    );
+    expect(onNotificationSeen).toHaveBeenCalledTimes(0);
+    await waitFor(() => expect(onNotificationSeen).toHaveBeenCalledTimes(1), { timeout: 3500 });
   });
 });

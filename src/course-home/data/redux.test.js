@@ -55,6 +55,29 @@ describe('Data layer integration tests', () => {
       expect(store.getState().courseHome.courseStatus).toEqual('failed');
     });
 
+    it('should result in fetch failed if course metadata call errored', async () => {
+      const datesTabData = Factory.build('datesTabData');
+      const datesUrl = `${datesBaseUrl}/${courseId}`;
+
+      axiosMock.onGet(courseMetadataUrl).networkError();
+      axiosMock.onGet(datesUrl).reply(200, datesTabData);
+
+      await executeThunk(thunks.fetchDatesTab(courseId), store.dispatch);
+
+      expect(loggingService.logError).toHaveBeenCalled();
+      expect(store.getState().courseHome.courseStatus).toEqual('failed');
+    });
+
+    it('should result in fetch failed if course metadata call errored', async () => {
+      axiosMock.onGet(courseMetadataUrl).reply(200, courseHomeMetadata);
+      axiosMock.onGet(`${datesBaseUrl}/${courseId}`).networkError();
+
+      await executeThunk(thunks.fetchDatesTab(courseId), store.dispatch);
+
+      expect(loggingService.logError).toHaveBeenCalled();
+      expect(store.getState().courseHome.courseStatus).toEqual('failed');
+    });
+
     it('Should fetch, normalize, and save metadata', async () => {
       const datesTabData = Factory.build('datesTabData');
 
@@ -67,29 +90,25 @@ describe('Data layer integration tests', () => {
 
       const state = store.getState();
       expect(state.courseHome.courseStatus).toEqual('loaded');
-      expect(state).toMatchSnapshot({
+      expect(state).toEqual(expect.objectContaining({
         // The Xpert chatbot (frontend-lib-learning-assistant) generates a unique UUID
-        // to keep track of conversations. This causes snapshots to fail, because this UUID
-        // is generated on each run of the snapshot. Instead, we use an asymmetric matcher here.
+        // to keep track of conversations. This UUID is generated on each run.
+        // Instead, we use an asymmetric matcher here.
         learningAssistant: expect.objectContaining({
           conversationId: expect.any(String),
         }),
-      });
+      }));
     });
 
     it.each([401, 403, 404])(
-      'should result in fetch denied for expected errors and failed for all others',
+      'should result in fetch denied if course access is denied, regardless of dates API status',
       async (errorStatus) => {
         axiosMock.onGet(courseMetadataUrl).reply(200, courseHomeAccessDeniedMetadata);
         axiosMock.onGet(`${datesBaseUrl}/${courseId}`).reply(errorStatus, {});
 
         await executeThunk(thunks.fetchDatesTab(courseId), store.dispatch);
 
-        let expectedState = 'failed';
-        if (errorStatus === 401 || errorStatus === 403) {
-          expectedState = 'denied';
-        }
-        expect(store.getState().courseHome.courseStatus).toEqual(expectedState);
+        expect(store.getState().courseHome.courseStatus).toEqual('denied');
       },
     );
   });
@@ -118,29 +137,25 @@ describe('Data layer integration tests', () => {
 
       const state = store.getState();
       expect(state.courseHome.courseStatus).toEqual('loaded');
-      expect(state).toMatchSnapshot({
+      expect(state).toEqual(expect.objectContaining({
         // The Xpert chatbot (frontend-lib-learning-assistant) generates a unique UUID
-        // to keep track of conversations. This causes snapshots to fail, because this UUID
-        // is generated on each run of the snapshot. Instead, we use an asymmetric matcher here.
+        // to keep track of conversations. This UUID is generated on each run.
+        // Instead, we use an asymmetric matcher here.
         learningAssistant: expect.objectContaining({
           conversationId: expect.any(String),
         }),
-      });
+      }));
     });
 
     it.each([401, 403, 404])(
-      'should result in fetch denied for expected errors and failed for all others',
+      'should result in fetch denied if course access is denied, regardless of outline API status',
       async (errorStatus) => {
         axiosMock.onGet(courseMetadataUrl).reply(200, courseHomeAccessDeniedMetadata);
         axiosMock.onGet(outlineUrl).reply(errorStatus, {});
 
         await executeThunk(thunks.fetchOutlineTab(courseId), store.dispatch);
 
-        let expectedState = 'failed';
-        if (errorStatus === 403) {
-          expectedState = 'denied';
-        }
-        expect(store.getState().courseHome.courseStatus).toEqual(expectedState);
+        expect(store.getState().courseHome.courseStatus).toEqual('denied');
       },
     );
   });
@@ -170,14 +185,14 @@ describe('Data layer integration tests', () => {
 
       const state = store.getState();
       expect(state.courseHome.courseStatus).toEqual('loaded');
-      expect(state).toMatchSnapshot({
+      expect(state).toEqual(expect.objectContaining({
         // The Xpert chatbot (frontend-lib-learning-assistant) generates a unique UUID
-        // to keep track of conversations. This causes snapshots to fail, because this UUID
-        // is generated on each run of the snapshot. Instead, we use an asymmetric matcher here.
+        // to keep track of conversations. This UUID is generated on each run.
+        // Instead, we use an asymmetric matcher here.
         learningAssistant: expect.objectContaining({
           conversationId: expect.any(String),
         }),
-      });
+      }));
     });
 
     it('Should handle the url including a targetUserId', async () => {
@@ -248,6 +263,38 @@ describe('Data layer integration tests', () => {
 
       expect(axiosMock.history.post[0].url).toEqual(dismissUrl);
       expect(axiosMock.history.post[0].data).toEqual(`{"course_id":"${courseId}"}`);
+    });
+  });
+
+  describe('Test fetchCoursewareSearchSettings', () => {
+    it('Should return enabled as true when enabled', async () => {
+      const apiUrl = `${getConfig().LMS_BASE_URL}/courses/${courseId}/courseware-search/enabled/`;
+      axiosMock.onGet(apiUrl).reply(200, { enabled: true });
+
+      const { enabled } = await thunks.fetchCoursewareSearchSettings(courseId);
+
+      expect(axiosMock.history.get[0].url).toEqual(apiUrl);
+      expect(enabled).toBe(true);
+    });
+
+    it('Should return enabled as false when disabled', async () => {
+      const apiUrl = `${getConfig().LMS_BASE_URL}/courses/${courseId}/courseware-search/enabled/`;
+      axiosMock.onGet(apiUrl).reply(200, { enabled: false });
+
+      const { enabled } = await thunks.fetchCoursewareSearchSettings(courseId);
+
+      expect(axiosMock.history.get[0].url).toEqual(apiUrl);
+      expect(enabled).toBe(false);
+    });
+
+    it('Should return enabled as false on error', async () => {
+      const apiUrl = `${getConfig().LMS_BASE_URL}/courses/${courseId}/courseware-search/enabled/`;
+      axiosMock.onGet(apiUrl).networkError();
+
+      const { enabled } = await thunks.fetchCoursewareSearchSettings(courseId);
+
+      expect(axiosMock.history.get[0].url).toEqual(apiUrl);
+      expect(enabled).toBe(false);
     });
   });
 });

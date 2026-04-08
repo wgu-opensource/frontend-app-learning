@@ -1,24 +1,21 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+
+import { useContextId } from '../../../../data/hooks';
 import { useModel } from '../../../../generic/model-store';
 
 import GradeSummaryHeader from './GradeSummaryHeader';
 import GradeSummaryTable from './GradeSummaryTable';
 
 const GradeSummary = () => {
-  const {
-    courseId,
-  } = useSelector(state => state.courseHome);
+  const courseId = useContextId();
 
   const {
-    gradingPolicy: {
-      assignmentPolicies,
-    },
+    assignmentTypeGradeSummary,
   } = useModel('progress', courseId);
 
   const [allOfSomeAssignmentTypeIsLocked, setAllOfSomeAssignmentTypeIsLocked] = useState(false);
 
-  if (assignmentPolicies.length === 0) {
+  if (assignmentTypeGradeSummary.length === 0) {
     return null;
   }
 

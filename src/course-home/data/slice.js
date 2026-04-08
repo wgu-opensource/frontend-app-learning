@@ -1,10 +1,12 @@
 /* eslint-disable no-param-reassign */
 import { createSlice } from '@reduxjs/toolkit';
 
-export const LOADING = 'loading';
-export const LOADED = 'loaded';
-export const FAILED = 'failed';
-export const DENIED = 'denied';
+import {
+  LOADING,
+  LOADED,
+  FAILED,
+  DENIED,
+} from '@src/constants';
 
 const slice = createSlice({
   name: 'course-home',
@@ -15,6 +17,7 @@ const slice = createSlice({
     toastBodyText: null,
     toastBodyLink: null,
     toastHeader: '',
+    showSearch: false,
   },
   reducers: {
     fetchProctoringInfoResolved: (state) => {
@@ -47,6 +50,9 @@ const slice = createSlice({
       state.toastBodyText = linkText;
       state.toastHeader = header;
     },
+    setShowSearch: (state, { payload }) => {
+      state.showSearch = payload;
+    },
   },
 });
 
@@ -57,6 +63,7 @@ export const {
   fetchTabRequest,
   fetchTabSuccess,
   setCallToActionToast,
+  setShowSearch,
 } = slice.actions;
 
 export const {

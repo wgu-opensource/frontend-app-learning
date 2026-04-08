@@ -5,6 +5,13 @@ import {
 } from '../../../../setupTest';
 import UnitNavigation from './UnitNavigation';
 
+const mockNavigate = jest.fn();
+
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
+
 describe('Unit Navigation', () => {
   let mockData;
   const courseMetadata = Factory.build('courseMetadata');
@@ -18,6 +25,7 @@ describe('Unit Navigation', () => {
     const store = await initializeTestStore({ courseMetadata, unitBlocks });
     const { courseware } = store.getState();
     mockData = {
+      courseId: courseware.courseId,
       unitId: unitBlocks[1].id,
       sequenceId: courseware.sequenceId,
       onClickPrevious: () => {},
@@ -55,6 +63,26 @@ describe('Unit Navigation', () => {
     expect(onClickNext).toHaveBeenCalledTimes(1);
   });
 
+  it('when clicked it calls navigate when is at the top', () => {
+    const onClickPrevious = jest.fn();
+    const onClickNext = jest.fn();
+
+    render(<UnitNavigation
+      {...mockData}
+      onClickPrevious={onClickPrevious}
+      onClickNext={onClickNext}
+      isAtTop
+    />, { wrapWithRouter: true });
+
+    fireEvent.click(screen.getByRole('button', { name: /previous/i }));
+    expect(onClickPrevious).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(onClickNext).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledTimes(2);
+  });
+
   it('has the navigation buttons enabled for the non-corner unit in the sequence', () => {
     render(<UnitNavigation {...mockData} />, { wrapWithRouter: true });
 
@@ -84,6 +112,50 @@ describe('Unit Navigation', () => {
 
     expect(screen.getByRole('link', { name: /previous/i })).toBeEnabled();
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+  });
+
+  it('has the "Next" button disabled for entrance exam failed', async () => {
+    const testCourseMetadata = {
+      ...courseMetadata,
+      certificate_data: { cert_status: 'bogus_status' },
+      enrollment: { is_active: true },
+      entrance_exam_data: {
+        entrance_exam_current_score: 0, entrance_exam_enabled: true, entrance_exam_id: '1', entrance_exam_minimum_score_pct: 0.65, entrance_exam_passed: false,
+      },
+    };
+    const testStore = await initializeTestStore({ courseMetadata: testCourseMetadata, unitBlocks }, false);
+    // Have to refetch the sequenceId since the new store generates new sequences
+    const { courseware } = testStore.getState();
+    const testData = { ...mockData, sequenceId: courseware.sequenceId };
+
+    render(
+      <UnitNavigation {...testData} unitId={unitBlocks[0].id} />,
+      { store: testStore, wrapWithRouter: true },
+    );
+
+    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled();
+  });
+
+  it('has the "Next" button enabled for entrance exam pass', async () => {
+    const testCourseMetadata = {
+      ...courseMetadata,
+      certificate_data: { cert_status: 'bogus_status' },
+      enrollment: { is_active: true },
+      entrance_exam_data: {
+        entrance_exam_current_score: 1.0, entrance_exam_enabled: true, entrance_exam_id: '1', entrance_exam_minimum_score_pct: 0.65, entrance_exam_passed: true,
+      },
+    };
+    const testStore = await initializeTestStore({ courseMetadata: testCourseMetadata, unitBlocks }, false);
+    // Have to refetch the sequenceId since the new store generates new sequences
+    const { courseware } = testStore.getState();
+    const testData = { ...mockData, sequenceId: courseware.sequenceId };
+
+    render(
+      <UnitNavigation {...testData} unitId={unitBlocks[0].id} />,
+      { store: testStore, wrapWithRouter: true },
+    );
+
+    expect(screen.getByRole('link', { name: /next/i })).toBeEnabled();
   });
 
   it('displays end of course message instead of the "Next" button as needed', async () => {

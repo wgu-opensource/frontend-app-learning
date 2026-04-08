@@ -1,0 +1,187 @@
+import React, { useState } from 'react';
+import { getConfig } from '@edx/frontend-platform';
+import { sendTrackEvent } from '@edx/frontend-platform/analytics';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { throttle } from 'lodash';
+
+import { logError } from '@edx/frontend-platform/logging';
+
+import { fetchCourse } from '@src/courseware/data';
+import { processEvent } from '@src/course-home/data/thunks';
+import { useEventListener } from '@src/generic/hooks';
+import { getSequenceId } from '@src/courseware/data/selectors';
+import { useModel } from '@src/generic/model-store';
+import { useSequenceNavigationMetadata } from '@src/courseware/course/sequence/sequence-navigation/hooks';
+import { messageTypes } from '../constants';
+
+import useLoadBearingHook from './useLoadBearingHook';
+
+export const iframeBehaviorState = {
+    iframeHeight: (val) => useState<number>(val), // eslint-disable-line
+    hasLoaded: (val) => useState<boolean>(val), // eslint-disable-line
+    showError: (val) => useState<boolean>(val), // eslint-disable-line
+    windowTopOffset: (val) => useState<number | null>(val), // eslint-disable-line
+} as const;
+
+const useIFrameBehavior = ({
+  elementId,
+  id,
+  iframeUrl,
+  onLoaded,
+}) => {
+  // Do not remove this hook.  See function description.
+  useLoadBearingHook(id);
+
+  const dispatch = useDispatch();
+  const activeSequenceId = useSelector(getSequenceId);
+  const navigate = useNavigate();
+  const activeSequence = useModel('sequences', activeSequenceId);
+  const activeUnitId = activeSequence.unitIds.length > 0
+    ? activeSequence.unitIds[activeSequence.activeUnitIndex] : null;
+  const { isLastUnit, nextLink } = useSequenceNavigationMetadata(activeSequenceId, activeUnitId);
+
+  const [iframeHeight, setIframeHeight] = iframeBehaviorState.iframeHeight(0);
+  const [hasLoaded, setHasLoaded] = iframeBehaviorState.hasLoaded(false);
+  const [showError, setShowError] = iframeBehaviorState.showError(false);
+  const [windowTopOffset, setWindowTopOffset] = iframeBehaviorState.windowTopOffset(null);
+
+  React.useEffect(() => {
+    const frame = document.getElementById(elementId) as HTMLIFrameElement | null;
+    const { hash } = window.location;
+    if (hash) {
+      // The url hash will be sent to LMS-served iframe in order to find the location of the
+      // hash within the iframe.
+      frame?.contentWindow?.postMessage({ hashName: hash }, `${getConfig().LMS_BASE_URL}`);
+    }
+  }, [id, onLoaded, iframeHeight, hasLoaded]);
+
+  const receiveMessage = React.useCallback(({ data }: MessageEvent) => {
+    const { type, payload } = data;
+    if (type === messageTypes.resize) {
+      setIframeHeight(payload.height);
+
+      if (!hasLoaded && iframeHeight === 0 && payload.height > 0) {
+        setHasLoaded(true);
+        if (onLoaded) {
+          onLoaded();
+        }
+      }
+    } else if (type === messageTypes.videoFullScreen) {
+      // We observe exit from the video xblock fullscreen mode
+      // and scroll to the previously saved scroll position
+      if (!payload.open && windowTopOffset !== null) {
+        window.scrollTo(0, Number(windowTopOffset));
+      }
+
+      // We listen for this message from LMS to know when we need to
+      // save or reset scroll position on toggle video xblock fullscreen mode
+      setWindowTopOffset(payload.open ? window.scrollY : null);
+    } else if (data.offset) {
+      // We listen for this message from LMS to know when the page needs to
+      // be scrolled to another location on the page.
+      window.scrollTo(0, data.offset + document.getElementById('unit-iframe')!.offsetTop);
+    } else if (type === messageTypes.autoAdvance) {
+      // We are listening to autoAdvance message to move to next sequence automatically.
+      // In case it is the last unit we need not do anything.
+      if (!isLastUnit && nextLink) {
+        navigate(nextLink);
+      }
+    }
+  }, [
+    id,
+    onLoaded,
+    hasLoaded,
+    setHasLoaded,
+    iframeHeight,
+    setIframeHeight,
+    windowTopOffset,
+    setWindowTopOffset,
+  ]);
+
+  useEventListener('message', receiveMessage);
+
+  // Send visibility status to the iframe. It's used to mark XBlocks as viewed.
+  const updateIframeVisibility = () => {
+    const iframeElement = document.getElementById(elementId) as HTMLIFrameElement | null;
+    const rect = iframeElement?.getBoundingClientRect();
+    const visibleInfo = {
+      type: 'unit.visibilityStatus',
+      data: {
+        topPosition: rect?.top,
+        viewportHeight: window.innerHeight,
+      },
+    };
+    iframeElement?.contentWindow?.postMessage(
+      visibleInfo,
+      `${getConfig().LMS_BASE_URL}`,
+    );
+  };
+
+  // Set up visibility tracking event listeners.
+  React.useEffect(() => {
+    if (!hasLoaded) {
+      return undefined;
+    }
+
+    const iframeElement = document.getElementById(elementId) as HTMLIFrameElement | null;
+    if (!iframeElement || !iframeElement.contentWindow) {
+      return undefined;
+    }
+
+    // Throttle the update function to prevent it from sending too many messages to the iframe.
+    const throttledUpdateVisibility = throttle(updateIframeVisibility, 100);
+
+    // Add event listeners to update the visibility of the iframe when the window is scrolled or resized.
+    window.addEventListener('scroll', throttledUpdateVisibility);
+    window.addEventListener('resize', throttledUpdateVisibility);
+
+    // Clean up event listeners on unmount.
+    return () => {
+      window.removeEventListener('scroll', throttledUpdateVisibility);
+      window.removeEventListener('resize', throttledUpdateVisibility);
+    };
+  }, [hasLoaded, elementId]);
+
+  /**
+  * onLoad *should* only fire after everything in the iframe has finished its own load events.
+  * Which means that the plugin.resize message (which calls setHasLoaded above) will have fired already
+  * for a successful load. If it *has not fired*, we are in an error state. For example, the backend
+  * could have given us a 4xx or 5xx response.
+  */
+
+  const handleIFrameLoad = () => {
+    if (!hasLoaded) {
+      setShowError(true);
+      sendTrackEvent('edx.bi.error.learning.iframe_load_failed', {
+        iframeUrl,
+        unitId: id,
+      });
+      logError('Unit iframe failed to load. Server possibly returned 4xx or 5xx response.', {
+        iframeUrl,
+      });
+    }
+    window.onmessage = (e) => {
+      if (e.data.event_name) {
+        dispatch(processEvent(e.data, fetchCourse));
+      }
+    };
+
+    // Update the visibility of the iframe in case the element is already visible.
+    updateIframeVisibility();
+  };
+
+  React.useEffect(() => {
+    setIframeHeight(0);
+    setHasLoaded(false);
+  }, [iframeUrl]);
+
+  return {
+    iframeHeight,
+    handleIFrameLoad,
+    showError,
+    hasLoaded,
+  };
+};
+
+export default useIFrameBehavior;

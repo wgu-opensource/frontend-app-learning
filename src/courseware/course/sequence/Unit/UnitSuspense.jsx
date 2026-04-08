@@ -3,12 +3,12 @@ import PropTypes from 'prop-types';
 
 import { useIntl } from '@edx/frontend-platform/i18n';
 
-import { useModel } from '../../../../generic/model-store';
-import PageLoading from '../../../../generic/PageLoading';
+import { useModel } from '@src/generic/model-store';
+import PageLoading from '@src/generic/PageLoading';
+import { GatedUnitContentMessageSlot } from '../../../../plugin-slots/GatedUnitContentMessageSlot';
 
 import messages from '../messages';
 import HonorCode from '../honor-code';
-import LockPaywall from '../lock-paywall';
 import * as hooks from './hooks';
 import { modelKeys } from './constants';
 
@@ -24,19 +24,17 @@ const UnitSuspense = ({
     meta.contentTypeGatingEnabled && unit.containsContentTypeGatedContent
   );
 
-  const suspenseComponent = (message, Component) => (
-    <Suspense fallback={<PageLoading srMessage={formatMessage(message)} />}>
-      <Component courseId={courseId} />
-    </Suspense>
-  );
-
   return (
     <>
       {shouldDisplayContentGating && (
-        suspenseComponent(messages.loadingLockedContent, LockPaywall)
+        <Suspense fallback={<PageLoading srMessage={formatMessage(messages.loadingLockedContent)} />}>
+          <GatedUnitContentMessageSlot courseId={courseId} />
+        </Suspense>
       )}
       {shouldDisplayHonorCode && (
-        suspenseComponent(messages.loadingHonorCode, HonorCode)
+        <Suspense fallback={<PageLoading srMessage={formatMessage(messages.loadingHonorCode)} />}>
+          <HonorCode courseId={courseId} />
+        </Suspense>
       )}
     </>
   );

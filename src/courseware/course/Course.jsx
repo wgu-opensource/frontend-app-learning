@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Helmet } from 'react-helmet';
 import { useDispatch } from 'react-redux';
 import { getConfig } from '@edx/frontend-platform';
-import { breakpoints, useWindowSize } from '@edx/paragon';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { breakpoints, useWindowSize } from '@openedx/paragon';
 
-import { AlertList } from '../../generic/user-messages';
-
-import Sequence from './sequence';
-
-import { CelebrationModal, shouldCelebrateOnSectionLoad, WeeklyGoalCelebrationModal } from './celebration';
+import { AlertList } from '@src/generic/user-messages';
+import { useModel } from '@src/generic/model-store';
 import Chat from './chat/Chat';
-import ContentTools from './content-tools';
-import CourseBreadcrumbs from './CourseBreadcrumbs';
 import SidebarProvider from './sidebar/SidebarContextProvider';
-import SidebarTriggers from './sidebar/SidebarTriggers';
-
-import { useModel } from '../../generic/model-store';
-import { getSessionStorage, setSessionStorage } from '../../data/sessionStorage';
+import NewSidebarProvider from './new-sidebar/SidebarContextProvider';
+import { NotificationsDiscussionsSidebarTriggerSlot } from '../../plugin-slots/NotificationsDiscussionsSidebarTriggerSlot';
+import { CelebrationModal, shouldCelebrateOnSectionLoad, WeeklyGoalCelebrationModal } from './celebration';
+import ContentTools from './content-tools';
+import Sequence from './sequence';
+import { CourseOutlineMobileSidebarTriggerSlot } from '../../plugin-slots/CourseOutlineMobileSidebarTriggerSlot';
+import { CourseBreadcrumbsSlot } from '../../plugin-slots/CourseBreadcrumbsSlot';
 
 const Course = ({
   courseId,
@@ -32,9 +31,18 @@ const Course = ({
   const {
     celebrations,
     isStaff,
+    isNewDiscussionSidebarViewEnabled,
+    originalUserIsStaff,
   } = useModel('courseHomeMeta', courseId);
   const sequence = useModel('sequences', sequenceId);
   const section = useModel('sections', sequence ? sequence.sectionId : null);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  if (!originalUserIsStaff && pathname.startsWith('/preview')) {
+    const courseUrl = pathname.replace('/preview', '');
+    navigate(courseUrl, { replace: true });
+  }
 
   const pageTitleBreadCrumbs = [
     sequence,
@@ -51,22 +59,9 @@ const Course = ({
   const [weeklyGoalCelebrationOpen, setWeeklyGoalCelebrationOpen] = useState(
     celebrations && !celebrations.streakLengthToCelebrate && celebrations.weeklyGoal,
   );
-  const shouldDisplayTriggers = windowWidth >= breakpoints.small.minWidth;
+  const shouldDisplayChat = windowWidth >= breakpoints.medium.minWidth;
   const daysPerWeek = course?.courseGoals?.selectedGoal?.daysPerWeek;
 
-  // Responsive breakpoints for showing the notification button/tray
-  const shouldDisplayNotificationTrayOpenOnLoad = windowWidth > breakpoints.medium.minWidth;
-
-  // Course specific notification tray open/closed persistance by browser session
-  if (!getSessionStorage(`notificationTrayStatus.${courseId}`)) {
-    if (shouldDisplayNotificationTrayOpenOnLoad) {
-      setSessionStorage(`notificationTrayStatus.${courseId}`, 'open');
-    } else {
-      // responsive version displays the tray closed on initial load, set the sessionStorage to closed
-      setSessionStorage(`notificationTrayStatus.${courseId}`, 'closed');
-    }
-  }
-
   useEffect(() => {
     const celebrateFirstSection = celebrations && celebrations.firstSection;
     setFirstSectionCelebrationOpen(shouldCelebrateOnSectionLoad(
@@ -78,31 +73,22 @@ const Course = ({
     ));
   }, [sequenceId]);
 
-  useEffect(() => {
-    const celebrateFirstSection = celebrations && celebrations.firstSection;
-    setFirstSectionCelebrationOpen(shouldCelebrateOnSectionLoad(
-      courseId,
-      sequenceId,
-      celebrateFirstSection,
-      dispatch,
-      celebrations,
-    ));
-  }, [sequenceId]);
+  const SidebarProviderComponent = isNewDiscussionSidebarViewEnabled ? NewSidebarProvider : SidebarProvider;
 
   return (
-    <SidebarProvider courseId={courseId} unitId={unitId}>
+    <SidebarProviderComponent courseId={courseId} unitId={unitId}>
       <Helmet>
         <title>{`${pageTitleBreadCrumbs.join(' | ')} | ${getConfig().SITE_NAME}`}</title>
       </Helmet>
-      <div className="position-relative d-flex align-items-start">
-        <CourseBreadcrumbs
+      <div className="position-relative d-flex align-items-xl-center mb-4 mt-1 flex-column flex-xl-row">
+        <CourseBreadcrumbsSlot
           courseId={courseId}
           sectionId={section ? section.id : null}
           sequenceId={sequenceId}
           isStaff={isStaff}
           unitId={unitId}
         />
-        {shouldDisplayTriggers && (
+        {shouldDisplayChat && (
           <>
             <Chat
               enabled={course.learningAssistantEnabled}
@@ -110,10 +96,14 @@ const Course = ({
               isStaff={isStaff}
               courseId={courseId}
               contentToolsEnabled={course.showCalculator || course.notes.enabled}
+              unitId={unitId}
             />
-            <SidebarTriggers />
           </>
         )}
+        <div className="w-100 d-flex align-items-center">
+          <CourseOutlineMobileSidebarTriggerSlot />
+          <NotificationsDiscussionsSidebarTriggerSlot courseId={courseId} />
+        </div>
       </div>
 
       <AlertList topic="sequence" />
@@ -137,7 +127,7 @@ const Course = ({
         onClose={() => setWeeklyGoalCelebrationOpen(false)}
       />
       <ContentTools course={course} />
-    </SidebarProvider>
+    </SidebarProviderComponent>
   );
 };
 

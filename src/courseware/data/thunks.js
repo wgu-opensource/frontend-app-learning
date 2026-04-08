@@ -7,7 +7,9 @@ import {
   getBlockCompletion,
   getCourseDiscussionConfig,
   getCourseMetadata,
+  getCourseOutline,
   getCourseTopics,
+  getCoursewareOutlineSidebarToggles,
   getLearningSequencesOutline,
   getSequenceMetadata,
   postIntegritySignature,
@@ -21,6 +23,11 @@ import {
   fetchSequenceFailure,
   fetchSequenceRequest,
   fetchSequenceSuccess,
+  fetchCourseOutlineRequest,
+  fetchCourseOutlineSuccess,
+  fetchCourseOutlineFailure,
+  setCoursewareOutlineSidebarToggles,
+  updateCourseOutlineCompletion,
 } from './slice';
 
 export function fetchCourse(courseId) {
@@ -30,18 +37,25 @@ export function fetchCourse(courseId) {
       getCourseMetadata(courseId),
       getLearningSequencesOutline(courseId),
       getCourseHomeCourseMetadata(courseId, 'courseware'),
+      getCoursewareOutlineSidebarToggles(courseId),
     ]).then(([
       courseMetadataResult,
       learningSequencesOutlineResult,
-      courseHomeMetadataResult]) => {
-      if (courseMetadataResult.status === 'fulfilled') {
+      courseHomeMetadataResult,
+      coursewareOutlineSidebarTogglesResult]) => {
+      const fetchedMetadata = courseMetadataResult.status === 'fulfilled';
+      const fetchedCourseHomeMetadata = courseHomeMetadataResult.status === 'fulfilled';
+      const fetchedOutline = learningSequencesOutlineResult.status === 'fulfilled';
+      const fetchedCoursewareOutlineSidebarTogglesResult = coursewareOutlineSidebarTogglesResult.status === 'fulfilled';
+
+      if (fetchedMetadata) {
         dispatch(addModel({
           modelType: 'coursewareMeta',
           model: courseMetadataResult.value,
         }));
       }
 
-      if (courseHomeMetadataResult.status === 'fulfilled') {
+      if (fetchedCourseHomeMetadata) {
         dispatch(addModel({
           modelType: 'courseHomeMeta',
           model: {
@@ -51,7 +65,7 @@ export function fetchCourse(courseId) {
         }));
       }
 
-      if (learningSequencesOutlineResult.status === 'fulfilled') {
+      if (fetchedOutline) {
         const {
           courses, sections, sequences,
         } = learningSequencesOutlineResult.value;
@@ -72,9 +86,14 @@ export function fetchCourse(courseId) {
         }));
       }
 
-      const fetchedMetadata = courseMetadataResult.status === 'fulfilled';
-      const fetchedCourseHomeMetadata = courseHomeMetadataResult.status === 'fulfilled';
-      const fetchedOutline = learningSequencesOutlineResult.status === 'fulfilled';
+      if (fetchedCoursewareOutlineSidebarTogglesResult) {
+        const {
+          enable_completion_tracking: enableCompletionTracking,
+        } = coursewareOutlineSidebarTogglesResult.value;
+        dispatch(setCoursewareOutlineSidebarToggles(
+          { enableCompletionTracking },
+        ));
+      }
 
       // Log errors for each request if needed. Outline failures may occur
       // even if the course metadata request is successful
@@ -94,6 +113,9 @@ export function fetchCourse(courseId) {
       if (!fetchedCourseHomeMetadata) {
         logError(courseHomeMetadataResult.reason);
       }
+      if (!fetchedCoursewareOutlineSidebarTogglesResult) {
+        logError(coursewareOutlineSidebarTogglesResult.reason);
+      }
       if (fetchedMetadata && fetchedCourseHomeMetadata) {
         if (courseHomeMetadataResult.value.courseAccess.hasAccess && fetchedOutline) {
           // User has access
@@ -112,11 +134,11 @@ export function fetchCourse(courseId) {
   };
 }
 
-export function fetchSequence(sequenceId) {
+export function fetchSequence(sequenceId, isPreview) {
   return async (dispatch) => {
     dispatch(fetchSequenceRequest({ sequenceId }));
     try {
-      const { sequence, units } = await getSequenceMetadata(sequenceId);
+      const { sequence, units } = await getSequenceMetadata(sequenceId, { preview: isPreview ? '1' : '0' });
       if (sequence.blockType !== 'sequential') {
         // Some other block types (particularly 'chapter') can be returned
         // by this API. We want to error in that case, since downstream
@@ -153,7 +175,7 @@ export function fetchSequence(sequenceId) {
 export function checkBlockCompletion(courseId, sequenceId, unitId) {
   return async (dispatch, getState) => {
     const { models } = getState();
-    if (models.units[unitId].complete) {
+    if (models.units[unitId]?.complete) {
       return {}; // do nothing. Things don't get uncompleted after they are completed.
     }
 
@@ -166,6 +188,7 @@ export function checkBlockCompletion(courseId, sequenceId, unitId) {
           complete: isComplete,
         },
       }));
+      dispatch(updateCourseOutlineCompletion({ sequenceId, unitId, isComplete }));
       return isComplete;
     } catch (error) {
       logError(error);
@@ -248,6 +271,19 @@ export function getCourseDiscussionTopics(courseId) {
       }
     } catch (error) {
       logError(error);
+    }
+  };
+}
+
+export function getCourseOutlineStructure(courseId) {
+  return async (dispatch) => {
+    dispatch(fetchCourseOutlineRequest());
+    try {
+      const courseOutline = await getCourseOutline(courseId);
+      dispatch(fetchCourseOutlineSuccess({ courseOutline }));
+    } catch (error) {
+      logError(error);
+      dispatch(fetchCourseOutlineFailure());
     }
   };
 }

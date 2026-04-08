@@ -1,6 +1,5 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
+import { useIntl } from '@edx/frontend-platform/i18n';
+import { useContextId } from '../../../../data/hooks';
 
 import { useModel } from '../../../../generic/model-store';
 
@@ -11,10 +10,9 @@ import CreditInformation from '../../credit-information/CreditInformation';
 
 import messages from '../messages';
 
-const CourseGrade = ({ intl }) => {
-  const {
-    courseId,
-  } = useSelector(state => state.courseHome);
+const CourseGrade = () => {
+  const intl = useIntl();
+  const courseId = useContextId();
 
   const {
     creditCourseRequirements,
@@ -54,8 +52,4 @@ const CourseGrade = ({ intl }) => {
   );
 };
 
-CourseGrade.propTypes = {
-  intl: intlShape.isRequired,
-};
-
-export default injectIntl(CourseGrade);
+export default CourseGrade;

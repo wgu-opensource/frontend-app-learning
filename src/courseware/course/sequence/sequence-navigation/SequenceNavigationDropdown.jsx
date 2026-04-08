@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Dropdown } from '@edx/paragon';
+import { Dropdown } from '@openedx/paragon';
 import { FormattedMessage } from '@edx/frontend-platform/i18n';
 
 import UnitButton from './UnitButton';
@@ -12,7 +12,7 @@ const SequenceNavigationDropdown = ({
   unitIds,
 }) => (
   <Dropdown className="sequence-navigation-dropdown">
-    <Dropdown.Toggle variant="link" className="font-weight-normal w-100 border-right-0">
+    <Dropdown.Toggle id="navigation-toggle" variant="link" className="font-weight-normal w-100 border-right-0">
       <FormattedMessage
         defaultMessage="{current} of {total}"
         description="The title of the mobile menu for sequence navigation of units"

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
-import { Button } from '@edx/paragon';
+import { useIntl } from '@edx/frontend-platform/i18n';
+import { Button } from '@openedx/paragon';
+import { CourseOutlineTabNotificationsSlot } from '../../plugin-slots/CourseOutlineTabNotificationsSlot';
 import { AlertList } from '../../generic/user-messages';
 
 import CourseDates from './widgets/CourseDates';
@@ -14,9 +15,7 @@ import WeeklyLearningGoalCard from './widgets/WeeklyLearningGoalCard';
 import CourseTools from './widgets/CourseTools';
 import { fetchOutlineTab } from '../data';
 import messages from './messages';
-import Section from './Section';
 import ShiftDatesAlert from '../suggested-schedule-messaging/ShiftDatesAlert';
-import UpgradeNotification from '../../generic/upgrade-notification/UpgradeNotification';
 import UpgradeToShiftDatesAlert from '../suggested-schedule-messaging/UpgradeToShiftDatesAlert';
 import useCertificateAvailableAlert from './alerts/certificate-status-alert';
 import useCourseEndAlert from './alerts/course-end-alert';
@@ -27,8 +26,10 @@ import { useModel } from '../../generic/model-store';
 import WelcomeMessage from './widgets/WelcomeMessage';
 import ProctoringInfoPanel from './widgets/ProctoringInfoPanel';
 import AccountActivationAlert from '../../alerts/logistration-alert/AccountActivationAlert';
+import CourseHomeSectionOutlineSlot from '../../plugin-slots/CourseHomeSectionOutlineSlot';
 
-const OutlineTab = ({ intl }) => {
+const OutlineTab = () => {
+  const intl = useIntl();
   const {
     courseId,
     proctoringPanelStatus,
@@ -38,11 +39,11 @@ const OutlineTab = ({ intl }) => {
     isSelfPaced,
     org,
     title,
-    userTimezone,
   } = useModel('courseHomeMeta', courseId);
 
+  const expandButtonRef = useRef();
+
   const {
-    accessExpiration,
     courseBlocks: {
       courses,
       sections,
@@ -51,19 +52,11 @@ const OutlineTab = ({ intl }) => {
       selectedGoal,
       weeklyLearningGoalEnabled,
     } = {},
-    datesBannerInfo,
     datesWidget: {
       courseDateBlocks,
     },
     enableProctoredExams,
-    offer,
-    timeOffsetMillis,
-    verifiedMode,
   } = useModel('outline', courseId);
-
-  const {
-    marketingUrl,
-  } = useModel('coursewareMeta', courseId);
 
   const [expandAll, setExpandAll] = useState(false);
   const navigate = useNavigate();
@@ -158,27 +151,21 @@ const OutlineTab = ({ intl }) => {
             </>
           )}
           <StartOrResumeCourseCard />
-          <WelcomeMessage courseId={courseId} />
+          <WelcomeMessage courseId={courseId} nextElementRef={expandButtonRef} />
           {rootCourseId && (
             <>
-              <div className="row w-100 m-0 mb-3 justify-content-end">
+              <div id="expand-button-row" className="row w-100 m-0 mb-3 justify-content-end">
                 <div className="col-12 col-md-auto p-0">
-                  <Button variant="outline-primary" block onClick={() => { setExpandAll(!expandAll); }}>
+                  <Button ref={expandButtonRef} variant="outline-primary" block onClick={() => { setExpandAll(!expandAll); }}>
                     {expandAll ? intl.formatMessage(messages.collapseAll) : intl.formatMessage(messages.expandAll)}
                   </Button>
                 </div>
               </div>
-              <ol id="courseHome-outline" className="list-unstyled">
-                {courses[rootCourseId].sectionIds.map((sectionId) => (
-                  <Section
-                    key={sectionId}
-                    courseId={courseId}
-                    defaultOpen={sections[sectionId].resumeBlock}
-                    expand={expandAll}
-                    section={sections[sectionId]}
-                  />
-                ))}
-              </ol>
+              <CourseHomeSectionOutlineSlot
+                expandAll={expandAll}
+                sectionIds={courses[rootCourseId].sectionIds}
+                sections={sections}
+              />
             </>
           )}
         </div>
@@ -194,19 +181,7 @@ const OutlineTab = ({ intl }) => {
               />
             )}
             <CourseTools />
-            <UpgradeNotification
-              offer={offer}
-              verifiedMode={verifiedMode}
-              accessExpiration={accessExpiration}
-              contentTypeGatingEnabled={datesBannerInfo.contentTypeGatingEnabled}
-              marketingUrl={marketingUrl}
-              upsellPageName="course_home"
-              userTimezone={userTimezone}
-              shouldDisplayBorder
-              timeOffsetMillis={timeOffsetMillis}
-              courseId={courseId}
-              org={org}
-            />
+            <CourseOutlineTabNotificationsSlot courseId={courseId} />
             <CourseDates />
             <CourseHandouts />
           </div>
@@ -216,8 +191,4 @@ const OutlineTab = ({ intl }) => {
   );
 };
 
-OutlineTab.propTypes = {
-  intl: intlShape.isRequired,
-};
-
-export default injectIntl(OutlineTab);
+export default OutlineTab;

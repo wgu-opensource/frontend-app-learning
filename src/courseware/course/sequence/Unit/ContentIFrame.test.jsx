@@ -1,19 +1,11 @@
-import React from 'react';
-
-import { ErrorPage } from '@edx/frontend-platform/react';
-import { Modal } from '@edx/paragon';
-import { shallow } from '@edx/react-unit-test-utils';
-
-import PageLoading from '../../../../generic/PageLoading';
+import { render, screen } from '@testing-library/react';
 
 import * as hooks from './hooks';
-import ContentIFrame, { IFRAME_FEATURE_POLICY, testIDs } from './ContentIFrame';
+import ContentIFrame, { IFRAME_FEATURE_POLICY } from './ContentIFrame';
 
-jest.mock('@edx/frontend-platform/react', () => ({ ErrorPage: 'ErrorPage' }));
+jest.mock('@edx/frontend-platform/react', () => ({ ErrorPage: () => <div>ErrorPage</div> }));
 
-jest.mock('@edx/paragon', () => ({ Modal: 'Modal' }));
-
-jest.mock('../../../../generic/PageLoading', () => 'PageLoading');
+jest.mock('@src/generic/PageLoading', () => jest.fn(() => <div>PageLoading</div>));
 
 jest.mock('./hooks', () => ({
   useIFrameBehavior: jest.fn(),
@@ -61,14 +53,13 @@ const props = {
   title: 'test-title',
 };
 
-let el;
 describe('ContentIFrame Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
   describe('behavior', () => {
     beforeEach(() => {
-      el = shallow(<ContentIFrame {...props} />);
+      render(<ContentIFrame {...props} />);
     });
     it('initializes iframe behavior hook', () => {
       expect(hooks.useIFrameBehavior).toHaveBeenCalledWith({
@@ -83,92 +74,123 @@ describe('ContentIFrame Component', () => {
     });
   });
   describe('output', () => {
-    let component;
     describe('if shouldShowContent', () => {
       describe('if not hasLoaded', () => {
         it('displays errorPage if showError', () => {
           hooks.useIFrameBehavior.mockReturnValueOnce({ ...iframeBehavior, showError: true });
-          el = shallow(<ContentIFrame {...props} />);
-          expect(el.instance.findByType(ErrorPage).length).toEqual(1);
+          render(<ContentIFrame {...props} />);
+          const errorPage = screen.getByText('ErrorPage');
+          expect(errorPage).toBeInTheDocument();
         });
         it('displays PageLoading component if not showError', () => {
-          el = shallow(<ContentIFrame {...props} />);
-          [component] = el.instance.findByType(PageLoading);
-          expect(component.props.srMessage).toEqual(props.loadingMessage);
+          render(<ContentIFrame {...props} />);
+          const pageLoading = screen.getByText('PageLoading');
+          expect(pageLoading).toBeInTheDocument();
         });
       });
       describe('hasLoaded', () => {
         it('does not display PageLoading or ErrorPage', () => {
           hooks.useIFrameBehavior.mockReturnValueOnce({ ...iframeBehavior, hasLoaded: true });
-          el = shallow(<ContentIFrame {...props} />);
-          expect(el.instance.findByType(PageLoading).length).toEqual(0);
-          expect(el.instance.findByType(ErrorPage).length).toEqual(0);
+          render(<ContentIFrame {...props} />);
+          const pageLoading = screen.queryByText('PageLoading');
+          expect(pageLoading).toBeNull();
+          const errorPage = screen.queryByText('ErrorPage');
+          expect(errorPage).toBeNull();
         });
       });
       it('display iframe with props from hooks', () => {
-        el = shallow(<ContentIFrame {...props} />);
-        [component] = el.instance.findByTestId(testIDs.contentIFrame);
-        expect(component.props).toEqual({
-          allow: IFRAME_FEATURE_POLICY,
-          allowFullScreen: true,
-          scrolling: 'no',
-          referrerPolicy: 'origin',
-          title: props.title,
-          id: props.elementId,
-          src: props.iframeUrl,
-          height: iframeBehavior.iframeHeight,
-          onLoad: iframeBehavior.handleIFrameLoad,
-          'data-testid': testIDs.contentIFrame,
-        });
+        render(<ContentIFrame {...props} />);
+        const iframe = screen.getByTitle(props.title);
+        expect(iframe).toBeInTheDocument();
+        expect(iframe).toHaveAttribute('id', props.elementId);
+        expect(iframe).toHaveAttribute('src', props.iframeUrl);
+        expect(iframe).toHaveAttribute('allow', IFRAME_FEATURE_POLICY);
+        expect(iframe).toHaveAttribute('allowfullscreen', '');
+        expect(iframe).toHaveAttribute('scrolling', 'no');
+        expect(iframe).toHaveAttribute('referrerpolicy', 'origin');
       });
     });
     describe('if not shouldShowContent', () => {
       it('does not show PageLoading, ErrorPage, or unit-iframe-wrapper', () => {
-        el = shallow(<ContentIFrame {...{ ...props, shouldShowContent: false }} />);
-        expect(el.instance.findByType(PageLoading).length).toEqual(0);
-        expect(el.instance.findByType(ErrorPage).length).toEqual(0);
-        expect(el.instance.findByTestId(testIDs.contentIFrame).length).toEqual(0);
+        render(<ContentIFrame {...{ ...props, shouldShowContent: false }} />);
+        expect(screen.queryByText('PageLoading')).toBeNull();
+        expect(screen.queryByText('ErrorPage')).toBeNull();
+        expect(screen.queryByTitle(props.title)).toBeNull();
       });
     });
     it('does not display modal if modalOptions returns isOpen: false', () => {
-      el = shallow(<ContentIFrame {...props} />);
-      expect(el.instance.findByType(Modal).length).toEqual(0);
+      render(<ContentIFrame {...props} />);
+      const modal = screen.queryByRole('dialog');
+      expect(modal).toBeNull();
     });
     describe('if modalOptions.isOpen', () => {
       const testModalOpenAndHandleClose = () => {
-        test('Modal component isOpen, with handleModalClose from hook', () => {
-          expect(component.props.onClose).toEqual(modalIFrameData.handleModalClose);
+        it('closes modal on close button click', () => {
+          const closeButton = screen.getByTestId('modal-backdrop');
+          closeButton.click();
+          expect(modalIFrameData.handleModalClose).toHaveBeenCalled();
         });
       };
+      describe('fullscreen modal', () => {
+        describe('body modal', () => {
+          beforeEach(() => {
+            hooks.useModalIFrameData.mockReturnValueOnce({
+              ...modalIFrameData,
+              modalOptions: { ...modalOptions.withBody, isFullscreen: true },
+            });
+            render(<ContentIFrame {...props} />);
+          });
+          it('displays Modal with div wrapping provided body content if modal.body is provided', () => {
+            const dialog = screen.getByRole('dialog');
+            expect(dialog).toBeInTheDocument();
+            const modalBody = screen.getByText(modalOptions.withBody.body);
+            expect(modalBody).toBeInTheDocument();
+          });
+          testModalOpenAndHandleClose();
+        });
+        describe('url modal', () => {
+          beforeEach(() => {
+            hooks.useModalIFrameData
+              .mockReturnValueOnce({
+                ...modalIFrameData,
+                modalOptions: { ...modalOptions.withUrl, isFullscreen: true },
+              });
+            render(<ContentIFrame {...props} />);
+          });
+          it('displays Modal with iframe to provided url if modal.body is not provided', () => {
+            const iframe = screen.getByTitle(modalOptions.withUrl.title);
+            expect(iframe).toBeInTheDocument();
+            expect(iframe).toHaveAttribute('allow', IFRAME_FEATURE_POLICY);
+            expect(iframe).toHaveAttribute('src', modalOptions.withUrl.url);
+          });
+          testModalOpenAndHandleClose();
+        });
+      });
       describe('body modal', () => {
         beforeEach(() => {
           hooks.useModalIFrameData.mockReturnValueOnce({ ...modalIFrameData, modalOptions: modalOptions.withBody });
-          el = shallow(<ContentIFrame {...props} />);
-          [component] = el.instance.findByType(Modal);
+          render(<ContentIFrame {...props} />);
         });
         it('displays Modal with div wrapping provided body content if modal.body is provided', () => {
-          expect(component.props.body).toEqual(<div className="unit-modal">{modalOptions.withBody.body}</div>);
+          const dialog = screen.getByRole('dialog');
+          expect(dialog).toBeInTheDocument();
+          const modalBody = screen.getByText(modalOptions.withBody.body);
+          expect(modalBody).toBeInTheDocument();
         });
         testModalOpenAndHandleClose();
       });
       describe('url modal', () => {
         beforeEach(() => {
           hooks.useModalIFrameData.mockReturnValueOnce({ ...modalIFrameData, modalOptions: modalOptions.withUrl });
-          el = shallow(<ContentIFrame {...props} />);
-          [component] = el.instance.findByType(Modal);
+          render(<ContentIFrame {...props} />);
+        });
+        it('displays Modal with iframe to provided url if modal.body is not provided', () => {
+          const iframe = screen.getByTitle(modalOptions.withUrl.title);
+          expect(iframe).toBeInTheDocument();
+          expect(iframe).toHaveAttribute('allow', IFRAME_FEATURE_POLICY);
+          expect(iframe).toHaveAttribute('src', modalOptions.withUrl.url);
         });
         testModalOpenAndHandleClose();
-        it('displays Modal with iframe to provided url if modal.body is not provided', () => {
-          expect(component.props.body).toEqual(
-            <iframe
-              title={modalOptions.withUrl.title}
-              allow={IFRAME_FEATURE_POLICY}
-              frameBorder="0"
-              src={modalOptions.withUrl.url}
-              style={{ width: '100%', height: modalOptions.withUrl.height }}
-            />,
-          );
-        });
       });
     });
   });

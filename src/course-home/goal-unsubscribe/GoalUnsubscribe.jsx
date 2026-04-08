@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { sendTrackEvent } from '@edx/frontend-platform/analytics';
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
+import { useIntl } from '@edx/frontend-platform/i18n';
 
-import { LearningHeader as Header } from '@edx/frontend-component-header';
+import HeaderSlot from '../../plugin-slots/HeaderSlot';
 import PageLoading from '../../generic/PageLoading';
 import { unsubscribeFromCourseGoal } from '../data/api';
 
 import messages from './messages';
 import ResultPage from './ResultPage';
 
-const GoalUnsubscribe = ({ intl }) => {
+const GoalUnsubscribe = () => {
+  const intl = useIntl();
   const { token } = useParams();
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,7 @@ const GoalUnsubscribe = ({ intl }) => {
 
   return (
     <>
-      <Header showUserDropdown={false} />
+      <HeaderSlot showUserDropdown={false} />
       <main id="main-content" className="container my-5 text-center">
         {isLoading && (
           <PageLoading srMessage={`${intl.formatMessage(messages.loading)}`} />
@@ -51,8 +52,4 @@ const GoalUnsubscribe = ({ intl }) => {
   );
 };
 
-GoalUnsubscribe.propTypes = {
-  intl: intlShape.isRequired,
-};
-
-export default injectIntl(GoalUnsubscribe);
+export default GoalUnsubscribe;

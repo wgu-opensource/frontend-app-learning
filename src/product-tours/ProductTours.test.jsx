@@ -163,7 +163,7 @@ describe('Course Home Tours', () => {
 jest.mock(
   '../courseware/course/sequence/Unit',
   () => function ({ courseId, id }) {
-    return <div id="courseware-sequenceNavigation" className="fake-unit">Unit Contents {courseId} {id}</div>;
+    return <div id="courseware-sequence-navigation" className="fake-unit">Unit Contents {courseId} {id}</div>;
   },
 );
 
@@ -217,6 +217,7 @@ describe('Courseware Tour', () => {
           <Routes>
             {DECODE_ROUTES.COURSEWARE.map((route) => (
               <Route
+                key={route}
                 path={route}
                 element={<CoursewareContainer />}
               />
@@ -284,7 +285,7 @@ describe('Courseware Tour', () => {
     });
 
     it.each([true, false])(
-      'should load courseware checkpoint correctly if tour enabled is $showCoursewareTour',
+      'displays courseware checkpoint only when $showCoursewareTour is enabled',
       async (showCoursewareTour) => {
         axiosMock.onGet(tourDataUrl).reply(200, {
           course_home_tour_status: 'no-tour',
@@ -292,13 +293,6 @@ describe('Courseware Tour', () => {
         });
 
         const container = await loadContainer();
-        const sequenceNavButtons = container.querySelectorAll('nav.sequence-navigation a, nav.sequence-navigation button');
-        const sequenceNextButton = sequenceNavButtons[4];
-        expect(sequenceNextButton).toHaveTextContent('Next');
-        fireEvent.click(sequenceNextButton);
-
-        expect(global.location.href).toEqual(`http://localhost/course/${courseId}/${defaultSequenceBlock.id}/${unitBlocks[1].id}`);
-
         const checkpoint = container.querySelectorAll('#pgn__checkpoint');
         expect(checkpoint).toHaveLength(showCoursewareTour ? 1 : 0);
       },

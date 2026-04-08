@@ -1,65 +1,106 @@
-import { mockUseKeyedState } from '@edx/react-unit-test-utils';
-import { useEventListener } from '../../../../../generic/hooks';
+import React from 'react';
+import { renderHook } from '@testing-library/react';
+import { useEventListener } from '@src/generic/hooks';
 import { messageTypes } from '../constants';
 
-import useModalIFrameBehavior, { stateKeys, DEFAULT_HEIGHT } from './useModalIFrameData';
+import useModalIFrameData, { DEFAULT_HEIGHT } from './useModalIFrameData';
 
 jest.mock('react', () => ({
   ...jest.requireActual('react'),
   useCallback: jest.fn((cb, prereqs) => ({ cb, prereqs })),
+  useState: jest.fn((initialValue) => [initialValue, jest.fn()]),
 }));
-jest.mock('../../../../../generic/hooks', () => ({
+jest.mock('@src/generic/hooks', () => ({
   useEventListener: jest.fn(),
 }));
 
-const state = mockUseKeyedState(stateKeys);
+const setIsOpen = jest.fn();
+const setOptions = jest.fn();
 
-describe('useModalIFrameBehavior', () => {
+const defaultState = {
+  isOpen: false,
+  options: { height: DEFAULT_HEIGHT },
+};
+
+const mockUseStateWithValues = (values) => {
+  jest.spyOn(React, 'useState')
+    .mockReturnValueOnce([values.isOpen, setIsOpen])
+    .mockReturnValueOnce([values.options, setOptions]);
+};
+
+describe('useModalIFrameData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    state.mock();
   });
+  const testHandleModalClose = ({ trigger }) => {
+    const postMessage = jest.fn();
+    document.querySelector = jest.fn().mockReturnValue({ contentWindow: { postMessage } });
+    trigger();
+    expect(React.useState).toHaveBeenNthCalledWith(1, false);
+    expect(postMessage).toHaveBeenCalledWith({ type: 'plugin.modal-close' }, '*');
+  };
   describe('behavior', () => {
-    it('initializes isOpen to false', () => {
-      useModalIFrameBehavior();
-      state.expectInitializedWith(stateKeys.isOpen, false);
-    });
-    it('initializes options with default height', () => {
-      useModalIFrameBehavior();
-      state.expectInitializedWith(stateKeys.options, { height: DEFAULT_HEIGHT });
+    it('should initialize with modal closed and default height', () => {
+      const { result } = renderHook(() => useModalIFrameData());
+
+      expect(result.current.modalOptions).toEqual({
+        isOpen: false,
+        height: DEFAULT_HEIGHT,
+      });
     });
     describe('eventListener', () => {
-      it('consumes modal events and opens sets modal options with open: true', () => {
-        const oldOptions = { some: 'old', options: 'yeah' };
-        state.mockVals({
-          [stateKeys.isOpen]: false,
-          [stateKeys.options]: oldOptions,
-        });
-        useModalIFrameBehavior();
+      const oldOptions = { some: 'old', options: 'yeah' };
+      const prepareListener = () => {
         expect(useEventListener).toHaveBeenCalled();
-        const { cb, prereqs } = useEventListener.mock.calls[0][1];
-        expect(prereqs).toEqual([]);
+        const call = useEventListener.mock.calls[0][1];
+        expect(call.prereqs).toEqual([]);
+        return call.cb;
+      };
+      it('consumes modal events and opens sets modal options with open: true', () => {
+        mockUseStateWithValues({
+          isOpen: false,
+          options: oldOptions,
+        });
+        renderHook(() => useModalIFrameData());
+        const receiveMessage = prepareListener();
         const payload = { test: 'values' };
-        cb({ data: { type: messageTypes.modal, payload } });
-        expect(state.setState.isOpen).toHaveBeenCalledWith(true);
-        expect(state.setState.options).toHaveBeenCalled();
-        const [[setOptionsCb]] = state.setState.options.mock.calls;
+        receiveMessage({ data: { type: messageTypes.modal, payload } });
+        expect(setIsOpen).toHaveBeenCalledWith(true);
+        expect(setOptions).toHaveBeenCalled();
+        const [[setOptionsCb]] = setOptions.mock.calls;
         expect(setOptionsCb(oldOptions)).toEqual({ ...oldOptions, ...payload });
+      });
+      it('ignores events with no type', () => {
+        const { result } = renderHook(() => useModalIFrameData());
+        const initialState = result.current.modalOptions;
+        const receiveMessage = prepareListener();
+        const payload = { test: 'values' };
+        receiveMessage({ data: { payload } });
+        expect(result.current.modalOptions).toEqual(initialState);
+      });
+      it('calls handleModalClose behavior when receiving a "plugin.modal-close" event', () => {
+        renderHook(() => useModalIFrameData());
+        const receiveMessage = prepareListener();
+        testHandleModalClose({
+          trigger: () => {
+            receiveMessage({ data: { type: 'plugin.modal-close' } });
+          },
+        });
       });
     });
   });
   describe('output', () => {
-    test('handleModalClose sets modal options to closed', () => {
-      useModalIFrameBehavior().handleModalClose();
-      state.expectSetStateCalledWith(stateKeys.isOpen, false);
+    test('returns handleModalClose callback', () => {
+      mockUseStateWithValues(defaultState);
+      testHandleModalClose({ trigger: useModalIFrameData().handleModalClose });
     });
     it('forwards modalOptions from state values', () => {
       const modalOptions = { test: 'options' };
-      state.mockVals({
-        [stateKeys.options]: modalOptions,
-        [stateKeys.isOpen]: true,
+      mockUseStateWithValues({
+        isOpen: true,
+        options: modalOptions,
       });
-      expect(useModalIFrameBehavior().modalOptions).toEqual({
+      expect(useModalIFrameData().modalOptions).toEqual({
         ...modalOptions,
         isOpen: true,
       });

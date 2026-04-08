@@ -1,19 +1,23 @@
-@import "~@edx/brand/paragon/fonts";
-@import "~@edx/brand/paragon/variables";
-@import "~@edx/paragon/scss/core/core";
-@import "~@edx/brand/paragon/overrides";
+@use "@openedx/paragon/styles/css/core/custom-media-breakpoints" as paragonCustomMediaBreakpoints;
 
 @import "~@edx/frontend-component-footer/dist/footer";
 @import "~@edx/frontend-component-header/dist/index";
 
 
 #root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+  }
+  
   main {
     flex-grow: 1;
+  }
+  #main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   header {
@@ -38,31 +42,13 @@
   }
 }
 
-.course-tabs-navigation {
-  border-bottom: solid 1px #eaeaea;
-
-  .nav a,
-  .nav button {
-    &:hover {
-      background-color: $light-400;
-    }
-  }
-
-  .nav a {
-    &:not(.active):hover {
-      background-color: $light-400;
-      border-bottom: none;
-    }
-  }
-}
-
 .nav-underline-tabs {
   margin: 0 0 -1px;
 
   .nav-link {
     border-bottom: 4px solid transparent;
     border-top: 4px solid transparent;
-    color: $gray-700;
+    color: var(--pgn-color-gray-700);
 
     // temporary until we can remove .btn class from dropdowns
     border-left: 0;
@@ -72,9 +58,9 @@
     &:hover,
     &:focus,
     &.active {
-      font-weight: $font-weight-normal;
-      color: $primary-500;
-      border-bottom-color: $primary-500;
+      font-weight: var(--pgn-typography-font-weight-normal);
+      color: var(--pgn-color-primary-500);
+      border-bottom-color: var(--pgn-color-primary-500);
     }
   }
 }
@@ -93,7 +79,7 @@
 }
 
 .sequence {
-  @media (min-width: map-get($grid-breakpoints, "sm")) {
+  @media (--pgn-size-breakpoint-min-width-sm) {
     border: solid 1px #eaeaea;
     border-radius: 4px;
   }
@@ -105,7 +91,7 @@
 }
 
 .notification-btn {
-  @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+  @media (--pgn-size-breakpoint-max-width-xs) {
     height: 3rem;
   }
 }
@@ -114,12 +100,16 @@
   display: flex;
   flex-grow: 1;
 
-  @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+  @media (--pgn-size-breakpoint-max-width-xs) {
     max-width: 100%;
   }
 
-  @media (min-width: map-get($grid-breakpoints, "sm")) {
+  @media (--pgn-size-breakpoint-min-width-sm) {
     margin: -1px -1px 0;
+  }
+
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    width: 100% !important;
   }
 
   .btn {
@@ -134,13 +124,13 @@
     height: 3rem;
     justify-content: center;
     align-items: center;
-    color: $gray-500;
+    color: var(--pgn-color-gray-500);
     white-space: nowrap;
 
     &:hover,
     &:focus,
     &.active {
-      color: $gray-700;
+      color: var(--pgn-color-gray-700);
     }
 
     &:focus {
@@ -155,13 +145,13 @@
         left: 0;
         right: 0;
         height: 2px;
-        background: $primary;
+        background: var(--pgn-color-primary-base);
       }
     }
 
     &.complete {
       background-color: #eef7e5;
-      color: $success;
+      color: var(--pgn-color-success-base);
     }
 
     &:first-child {
@@ -191,6 +181,18 @@
     }
   }
 
+  .navigation-tab-width-xl {
+    max-width: 47rem;
+  }
+
+  .navigation-tab-width-large {
+    max-width: 28rem;
+  }
+
+  .navigation-tab-width-medium{
+    max-width: 23.5rem;
+  }
+
   .sequence-navigation-dropdown {
     .dropdown-menu .btn {
       flex-basis: 100%;
@@ -213,12 +215,12 @@
         min-width: 0;
         margin: 0 1rem;
         text-overflow: ellipsis;
-        color: $gray-700;
+        color: var(--pgn-color-gray-700);
       }
 
       &.active {
         .unit-icon {
-          color: $primary-500;
+          color: var(--pgn-color-primary-500);
         }
 
         &:after {
@@ -230,7 +232,7 @@
           right: auto;
           width: 2px;
           height: auto;
-          background: $primary;
+          background: var(--pgn-color-primary-base);
         }
       }
     }
@@ -245,18 +247,18 @@
 
   .previous-btn,
   .next-btn {
-    border: 1px solid $light-400 !important;
-    color: $gray-700;
+    border: 1px solid var(--pgn-color-light-400) !important;
+    color: var(--pgn-color-gray-700);
     display: inline-flex;
     justify-content: center;
     align-items: center;
 
-    @media (max-width: -1 + map-get($grid-breakpoints, "sm")) {
+    @media (--pgn-size-breakpoint-max-width-sm) {
       padding-top: 1rem;
       padding-bottom: 1rem;
     }
 
-    @media (min-width: map-get($grid-breakpoints, "sm")) {
+    @media (--pgn-size-breakpoint-min-width-sm) {
       min-width: fit-content;
       padding-left: 2rem;
       padding-right: 2rem;
@@ -267,7 +269,7 @@
     border-left-width: 0;
     margin-left: 0;
 
-    @media (min-width: map-get($grid-breakpoints, "sm")) {
+    @media (--pgn-size-breakpoint-min-width-sm) {
       border-left-width: 1px;
       border-top-left-radius: 4px;
     }
@@ -277,7 +279,7 @@
     border-left-width: 1px;
     border-right-width: 0;
 
-    @media (min-width: map-get($grid-breakpoints, "sm")) {
+    @media (--pgn-size-breakpoint-min-width-sm) {
       border-top-right-radius: 4px;
       border-right-width: 1px;
     }
@@ -291,9 +293,9 @@
   margin-left: auto;
   margin-right: auto;
 
-  @media (min-width: map-get($grid-breakpoints, "sm")) {
-    padding-left: $grid-gutter-width;
-    padding-right: $grid-gutter-width;
+  @media (--pgn-size-breakpoint-min-width-sm) {
+    padding-left: var(--pgn-spacing-grid-gutter-width);
+    padding-right: var(--pgn-spacing-grid-gutter-width);
   }
 
   @media (min-width: 830px) {
@@ -311,8 +313,8 @@
   // here we compensate for the padding of the parent div with "container-xl"
   // class to ensure that the viewport width is the same as the width of the
   // iframe.
-  margin-left: -$grid-gutter-width * .5;
-  margin-right: -$grid-gutter-width * .5;
+  margin-left: calc(var(--pgn-spacing-grid-gutter-width) * -0.5);
+  margin-right: calc(var(--pgn-spacing-grid-gutter-width) * -0.5);
 
   margin-bottom: 2rem;
 
@@ -330,25 +332,34 @@
 .unit-navigation {
   display: flex;
   justify-content: center;
+  gap: 5px;
   max-width: 640px;
   margin: 0 auto;
 
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    flex-direction: column;
+    gap: var(--pgn-spacing-spacer-base);
+  }
+
   .previous-button,
   .next-button {
-    white-space: nowrap;
     border-radius: 4px;
 
     &:focus:before {
       border-radius: 6px;
     }
   }
+}
 
-  .next-button {
-    flex-basis: 75%;
-  }
+.top-unit-navigation {
+  display: flex;
+  max-width: 100%;
+  gap: 5px;
+  justify-content: flex-end;
 
+  .next-button,
   .previous-button {
-    flex-basis: 25%;
+    font-size: 1.5rem;
   }
 }
 
@@ -395,19 +406,63 @@
   box-shadow: 0 .0625rem .125rem rgba(0, 0, 0, .2) !important;
 }
 
+.icon-hover {
+  &:hover {
+    color: var(--pgn-color-primary-500) !important;
+    background-color: var(--pgn-color-light-300) !important;
+  }
+}
+
+.sticky-top {
+  position: sticky;
+  top: 0;
+}
+
+.min-height-700 {
+  min-height: 700px;
+}
+
+.size-4r {
+  width: 4rem !important;
+  height: 4rem !important;
+}
+
+.size-56px {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+@media (--pgn-size-breakpoint-max-width-xs) {
+  .course-outline-tab .pgn__card {
+    .pgn__card-header {
+      display: block;
+  
+      .pgn__card-header-content {
+        margin-top: 0;
+      }
+    }
+    
+    .pgn__card-header-actions {
+      margin-left: 0;
+    }
+  }
+}
+
 // Import component-specific sass files
 @import "courseware/course/celebration/CelebrationModal.scss";
+@import "courseware/course/sidebar/sidebars/discussions/Discussions.scss";
 @import "courseware/course/sidebar/sidebars/notifications/NotificationIcon.scss";
-@import "courseware/course/sequence/lock-paywall/LockPaywall.scss";
 @import "shared/streak-celebration/StreakCelebrationModal.scss";
 @import "courseware/course/content-tools/calculator/calculator.scss";
 @import "courseware/course/content-tools/contentTools.scss";
 @import "course-home/dates-tab/timeline/Day.scss";
-@import "generic/upgrade-notification/UpgradeNotification.scss";
-@import "generic/upsell-bullets/UpsellBullets.scss";
 @import "course-home/outline-tab/widgets/ProctoringInfoPanel.scss";
-@import "src/course-home/outline-tab/widgets/FlagButton.scss";
+@import "course-home/outline-tab/widgets/FlagButton.scss";
 @import "course-home/progress-tab/course-completion/CompletionDonutChart.scss";
 @import "course-home/progress-tab/grades/course-grade/GradeBar.scss";
 @import "courseware/course/course-exit/CourseRecommendations";
 @import "product-tours/newUserCourseHomeTour/NewUserCourseHomeTourModal.scss";
+@import "course-home/courseware-search/courseware-search.scss";
+@import "course-tabs/course-tabs-navigation.scss";
+@import "courseware/course/sidebar/common/SidebarBase.scss";
+@import "courseware/course/sidebar/sidebars/course-outline/CourseOutlineTray.scss";

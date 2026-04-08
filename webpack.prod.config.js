@@ -1,5 +1,5 @@
 const path = require('path');
-const { createConfig } = require('@edx/frontend-build');
+const { createConfig } = require('@openedx/frontend-build');
 const CopyPlugin = require('copy-webpack-plugin');
 
 const config = createConfig('webpack-prod');
@@ -14,5 +14,10 @@ config.plugins.push(
     ],
   }),
 );
+
+config.resolve.alias = {
+  ...config.resolve.alias,
+  '@src': path.resolve(__dirname, 'src'),
+};
 
 module.exports = config;

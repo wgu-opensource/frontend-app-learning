@@ -3,93 +3,6 @@ import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { logInfo } from '@edx/frontend-platform/logging';
 import { appendBrowserTimezoneToUrl } from '../../utils';
 
-const calculateAssignmentTypeGrades = (points, assignmentWeight, numDroppable) => {
-  let dropCount = numDroppable;
-  // Drop the lowest grades
-  while (dropCount && points.length >= dropCount) {
-    const lowestScore = Math.min(...points);
-    const lowestScoreIndex = points.indexOf(lowestScore);
-    points.splice(lowestScoreIndex, 1);
-    dropCount--;
-  }
-  let averageGrade = 0;
-  let weightedGrade = 0;
-  if (points.length) {
-    // Calculate the average grade for the assignment and round it. This rounding is not ideal and does not accurately
-    // reflect what a learner's grade would be, however, we must have parity with the current grading behavior that
-    // exists in edx-platform.
-    averageGrade = (points.reduce((a, b) => a + b, 0) / points.length).toFixed(2);
-    weightedGrade = averageGrade * assignmentWeight;
-  }
-  return { averageGrade, weightedGrade };
-};
-
-function normalizeAssignmentPolicies(assignmentPolicies, sectionScores) {
-  const gradeByAssignmentType = {};
-  assignmentPolicies.forEach(assignment => {
-    // Create an array with the number of total assignments and set the scores to 0
-    // as placeholders for assignments that have not yet been released
-    gradeByAssignmentType[assignment.type] = {
-      grades: Array(assignment.numTotal).fill(0),
-      numAssignmentsCreated: 0,
-      numTotalExpectedAssignments: assignment.numTotal,
-    };
-  });
-
-  sectionScores.forEach((chapter) => {
-    chapter.subsections.forEach((subsection) => {
-      if (!(subsection.hasGradedAssignment && subsection.showGrades && subsection.numPointsPossible)) {
-        return;
-      }
-      const {
-        assignmentType,
-        numPointsEarned,
-        numPointsPossible,
-      } = subsection;
-
-      // If a subsection's assignment type does not match an assignment policy in Studio,
-      // we won't be able to include it in this accumulation of grades by assignment type.
-      // This may happen if a course author has removed/renamed an assignment policy in Studio and
-      // neglected to update the subsection's of that assignment type
-      if (!gradeByAssignmentType[assignmentType]) {
-        return;
-      }
-
-      let {
-        numAssignmentsCreated,
-      } = gradeByAssignmentType[assignmentType];
-
-      numAssignmentsCreated++;
-      if (numAssignmentsCreated <= gradeByAssignmentType[assignmentType].numTotalExpectedAssignments) {
-        // Remove a placeholder grade so long as the number of recorded created assignments is less than the number
-        // of expected assignments
-        gradeByAssignmentType[assignmentType].grades.shift();
-      }
-      // Add the graded assignment to the list
-      gradeByAssignmentType[assignmentType].grades.push(numPointsEarned ? numPointsEarned / numPointsPossible : 0);
-      // Record the created assignment
-      gradeByAssignmentType[assignmentType].numAssignmentsCreated = numAssignmentsCreated;
-    });
-  });
-
-  return assignmentPolicies.map((assignment) => {
-    const { averageGrade, weightedGrade } = calculateAssignmentTypeGrades(
-      gradeByAssignmentType[assignment.type].grades,
-      assignment.weight,
-      assignment.numDroppable,
-    );
-
-    return {
-      averageGrade,
-      numDroppable: assignment.numDroppable,
-      shortLabel: assignment.shortLabel,
-      type: assignment.type,
-      weight: assignment.weight,
-      weightedGrade,
-    };
-  });
-}
-
 /**
  * Tweak the metadata for consistency
  * @param metadata the data to normalize
@@ -136,6 +49,7 @@ export function normalizeOutlineBlocks(courseId, blocks) {
           title: block.display_name,
           resumeBlock: block.resume_block,
           sequenceIds: block.children || [],
+          hideFromTOC: block.hide_from_toc,
         };
         break;
 
@@ -152,6 +66,8 @@ export function normalizeOutlineBlocks(courseId, blocks) {
           // link in the outline (even though we ignore the given url and use an internal <Link> to ourselves).
           showLink: !!block.lms_web_url,
           title: block.display_name,
+          hideFromTOC: block.hide_from_toc,
+          navigationDisabled: block.navigation_disabled,
         };
         break;
 
@@ -233,11 +149,6 @@ export async function getProgressTabData(courseId, targetUserId) {
     const { data } = await getAuthenticatedHttpClient().get(url);
     const camelCasedData = camelCaseObject(data);
 
-    camelCasedData.gradingPolicy.assignmentPolicies = normalizeAssignmentPolicies(
-      camelCasedData.gradingPolicy.assignmentPolicies,
-      camelCasedData.sectionScores,
-    );
-
     // We replace gradingPolicy.gradeRange with the original data to preserve the intended casing for the grade.
     // For example, if a grade range key is "A", we do not want it to be camel cased (i.e. "A" would become "a")
     // in order to preserve a course team's desired grade formatting.
@@ -286,9 +197,17 @@ export async function getProgressTabData(courseId, targetUserId) {
 }
 
 export async function getProctoringInfoData(courseId, username) {
-  let url = `${getConfig().LMS_BASE_URL}/api/edx_proctoring/v1/user_onboarding/status?is_learning_mfe=true&course_id=${encodeURIComponent(courseId)}`;
-  if (username) {
-    url += `&username=${encodeURIComponent(username)}`;
+  let url;
+  if (!getConfig().EXAMS_BASE_URL) {
+    url = `${getConfig().LMS_BASE_URL}/api/edx_proctoring/v1/user_onboarding/status?is_learning_mfe=true&course_id=${encodeURIComponent(courseId)}`;
+    if (username) {
+      url += `&username=${encodeURIComponent(username)}`;
+    }
+  } else {
+    url = `${getConfig().EXAMS_BASE_URL}/api/v1/student/course_id/${encodeURIComponent(courseId)}/onboarding`;
+    if (username) {
+      url += `?username=${encodeURIComponent(username)}`;
+    }
   }
   try {
     const { data } = await getAuthenticatedHttpClient().get(url);
@@ -356,7 +275,6 @@ export async function getOutlineTabData(courseId) {
   } = tabData;
 
   const accessExpiration = camelCaseObject(data.access_expiration);
-  const canShowUpgradeSock = data.can_show_upgrade_sock;
   const certData = camelCaseObject(data.cert_data);
   const courseBlocks = data.course_blocks ? normalizeOutlineBlocks(courseId, data.course_blocks.blocks) : {};
   const courseGoals = camelCaseObject(data.course_goals);
@@ -378,7 +296,6 @@ export async function getOutlineTabData(courseId) {
 
   return {
     accessExpiration,
-    canShowUpgradeSock,
     certData,
     courseBlocks,
     courseGoals,
@@ -444,4 +361,21 @@ export async function unsubscribeFromCourseGoal(token) {
   const url = new URL(`${getConfig().LMS_BASE_URL}/api/course_home/unsubscribe_from_course_goal/${token}`);
   return getAuthenticatedHttpClient().post(url.href)
     .then(res => camelCaseObject(res));
+}
+
+export async function getCoursewareSearchEnabled(courseId) {
+  const url = new URL(`${getConfig().LMS_BASE_URL}/courses/${courseId}/courseware-search/enabled/`);
+  const { data } = await getAuthenticatedHttpClient().get(url.href);
+  return { enabled: data.enabled || false };
+}
+
+export async function searchCourseContentFromAPI(courseId, searchKeyword, options = {}) {
+  const defaults = { page: 0, limit: 20 };
+  const { page, limit } = { ...defaults, ...options };
+
+  const url = new URL(`${getConfig().LMS_BASE_URL}/search/${courseId}`);
+  const formData = `search_string=${searchKeyword}&page_size=${limit}&page_index=${page}`;
+  const response = await getAuthenticatedHttpClient().post(url.href, formData);
+
+  return camelCaseObject(response);
 }

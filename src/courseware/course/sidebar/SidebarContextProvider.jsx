@@ -1,10 +1,14 @@
-import { breakpoints, useWindowSize } from '@edx/paragon';
+import { breakpoints, useWindowSize } from '@openedx/paragon';
 import PropTypes from 'prop-types';
-import React, {
+import {
   useEffect, useState, useMemo, useCallback,
 } from 'react';
 
-import { getLocalStorage, setLocalStorage } from '../../../data/localStorage';
+import { useModel } from '@src/generic/model-store';
+import { getLocalStorage, setLocalStorage } from '@src/data/localStorage';
+
+import * as discussionsSidebar from './sidebars/discussions';
+import * as notificationsSidebar from './sidebars/notifications';
 import SidebarContext from './SidebarContext';
 import { SIDEBARS } from './sidebars';
 
@@ -13,18 +17,35 @@ const SidebarProvider = ({
   unitId,
   children,
 }) => {
-  const shouldDisplayFullScreen = useWindowSize().width < breakpoints.large.minWidth;
-  const shouldDisplaySidebarOpen = useWindowSize().width > breakpoints.medium.minWidth;
+  const { verifiedMode } = useModel('courseHomeMeta', courseId);
+  const topic = useModel('discussionTopics', unitId);
+  const isUnitHasDiscussionTopics = topic?.id && topic?.enabledInContext;
+  const shouldDisplayFullScreen = useWindowSize().width < breakpoints.extraLarge.minWidth;
+  const shouldDisplaySidebarOpen = useWindowSize().width > breakpoints.extraLarge.minWidth;
   const query = new URLSearchParams(window.location.search);
-  const initialSidebar = (shouldDisplaySidebarOpen || query.get('sidebar') === 'true') ? SIDEBARS.DISCUSSIONS.ID : null;
+  const isInitiallySidebarOpen = shouldDisplaySidebarOpen || query.get('sidebar') === 'true';
+
+  let initialSidebar = shouldDisplayFullScreen ? getLocalStorage(`sidebar.${courseId}`) : null;
+  if (!shouldDisplayFullScreen && isInitiallySidebarOpen) {
+    initialSidebar = isUnitHasDiscussionTopics
+      ? SIDEBARS[discussionsSidebar.ID].ID
+      : verifiedMode && SIDEBARS[notificationsSidebar.ID].ID;
+  }
   const [currentSidebar, setCurrentSidebar] = useState(initialSidebar);
   const [notificationStatus, setNotificationStatus] = useState(getLocalStorage(`notificationStatus.${courseId}`));
   const [upgradeNotificationCurrentState, setUpgradeNotificationCurrentState] = useState(getLocalStorage(`upgradeNotificationCurrentState.${courseId}`));
 
   useEffect(() => {
-    setCurrentSidebar(SIDEBARS.DISCUSSIONS.ID);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unitId]);
+    if (initialSidebar && currentSidebar !== initialSidebar) {
+      setCurrentSidebar(initialSidebar);
+    }
+  }, [unitId, topic]);
+
+  useEffect(() => {
+    if (initialSidebar) {
+      setCurrentSidebar(initialSidebar);
+    }
+  }, [shouldDisplaySidebarOpen]);
 
   const onNotificationSeen = useCallback(() => {
     setNotificationStatus('inactive');
@@ -33,10 +54,13 @@ const SidebarProvider = ({
 
   const toggleSidebar = useCallback((sidebarId) => {
     // Switch to new sidebar or hide the current sidebar
-    setCurrentSidebar(sidebarId === currentSidebar ? null : sidebarId);
+    const newSidebar = sidebarId === currentSidebar ? null : sidebarId;
+    setCurrentSidebar(newSidebar);
+    setLocalStorage(`sidebar.${courseId}`, newSidebar);
   }, [currentSidebar]);
 
   const contextValue = useMemo(() => ({
+    initialSidebar,
     toggleSidebar,
     onNotificationSeen,
     setNotificationStatus,

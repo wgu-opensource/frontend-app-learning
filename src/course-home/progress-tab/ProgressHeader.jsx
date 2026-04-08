@@ -1,15 +1,14 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
-import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
-import { Button } from '@edx/paragon';
+import { useIntl } from '@edx/frontend-platform/i18n';
+import { Button } from '@openedx/paragon';
+import { useSelector } from 'react-redux';
 
 import { useModel } from '../../generic/model-store';
 
 import messages from './messages';
 
-const ProgressHeader = ({ intl }) => {
+const ProgressHeader = () => {
+  const intl = useIntl();
   const {
     courseId,
     targetUserId,
@@ -37,8 +36,4 @@ const ProgressHeader = ({ intl }) => {
   );
 };
 
-ProgressHeader.propTypes = {
-  intl: intlShape.isRequired,
-};
-
-export default injectIntl(ProgressHeader);
+export default ProgressHeader;
