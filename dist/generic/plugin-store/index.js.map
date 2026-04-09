@@ -1,1 +1,0 @@
-{"version":3,"file":"index.js","names":["_slice","require","_hooks"],"sources":["../../../src/generic/plugin-store/index.js"],"sourcesContent":["export {\n  reducer,\n  registerOverrideMethod,\n} from './slice';\n\nexport {\n  usePluginsCallback,\n} from './hooks';\n"],"mappings":";;;;;;;;;;;;;;;;;;;;;;;AAAA,IAAAA,MAAA,GAAAC,OAAA;AAKA,IAAAC,MAAA,GAAAD,OAAA","ignoreList":[]}
