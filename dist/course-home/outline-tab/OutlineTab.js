@@ -1,0 +1,79 @@
+import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { sendTrackEvent } from '@edx/frontend-platform/analytics';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
+import { useIntl } from '@edx/frontend-platform/i18n';
+import { Button } from '@openedx/paragon';
+import { CourseOutlineTabNotificationsSlot } from '../../plugin-slots/CourseOutlineTabNotificationsSlot';
+import { AlertList } from '../../generic/user-messages';
+import CourseDates from './widgets/CourseDates';
+import CourseHandouts from './widgets/CourseHandouts';
+import StartOrResumeCourseCard from './widgets/StartOrResumeCourseCard';
+import WeeklyLearningGoalCard from './widgets/WeeklyLearningGoalCard';
+import CourseTools from './widgets/CourseTools';
+import { fetchOutlineTab } from '../data';
+import messages from './messages';
+import ShiftDatesAlert from '../suggested-schedule-messaging/ShiftDatesAlert';
+import UpgradeToShiftDatesAlert from '../suggested-schedule-messaging/UpgradeToShiftDatesAlert';
+import useCertificateAvailableAlert from './alerts/certificate-status-alert';
+import useCourseEndAlert from './alerts/course-end-alert';
+import useCourseStartAlert from '../../alerts/course-start-alert';
+import usePrivateCourseAlert from './alerts/private-course-alert';
+import useScheduledContentAlert from './alerts/scheduled-content-alert';
+import { useModel } from '../../generic/model-store';
+import WelcomeMessage from './widgets/WelcomeMessage';
+import ProctoringInfoPanel from './widgets/ProctoringInfoPanel';
+import AccountActivationAlert from '../../alerts/logistration-alert/AccountActivationAlert';
+import CourseHomeSectionOutlineSlot from '../../plugin-slots/CourseHomeSectionOutlineSlot';
+const OutlineTab = () => {
+    const intl = useIntl();
+    const { courseId, proctoringPanelStatus, } = useSelector(state => state.courseHome);
+    const { isSelfPaced, org, title, } = useModel('courseHomeMeta', courseId);
+    const expandButtonRef = useRef();
+    const { courseBlocks: { courses, sections, }, courseGoals: { selectedGoal, weeklyLearningGoalEnabled, } = {}, datesWidget: { courseDateBlocks, }, enableProctoredExams, } = useModel('outline', courseId);
+    const [expandAll, setExpandAll] = useState(false);
+    const navigate = useNavigate();
+    const eventProperties = {
+        org_key: org,
+        courserun_key: courseId,
+    };
+    // Below the course title alerts (appearing in the order listed here)
+    const courseStartAlert = useCourseStartAlert(courseId);
+    const courseEndAlert = useCourseEndAlert(courseId);
+    const certificateAvailableAlert = useCertificateAvailableAlert(courseId);
+    const privateCourseAlert = usePrivateCourseAlert(courseId);
+    const scheduledContentAlert = useScheduledContentAlert(courseId);
+    const rootCourseId = courses && Object.keys(courses)[0];
+    const hasDeadlines = courseDateBlocks && courseDateBlocks.some(x => x.dateType === 'assignment-due-date');
+    const logUpgradeToShiftDatesLinkClick = () => {
+        sendTrackEvent('edx.bi.ecommerce.upsell_links_clicked', Object.assign(Object.assign({}, eventProperties), { linkCategory: 'personalized_learner_schedules', linkName: 'course_home_upgrade_shift_dates', linkType: 'button', pageName: 'course_home' }));
+    };
+    const isEnterpriseUser = () => {
+        const authenticatedUser = getAuthenticatedUser();
+        const userRoleNames = authenticatedUser ? authenticatedUser.roles.map(role => role.split(':')[0]) : [];
+        return userRoleNames.includes('enterprise_learner');
+    };
+    /** show post enrolment survey to only B2C learners */
+    const learnerType = isEnterpriseUser() ? 'enterprise_learner' : 'b2c_learner';
+    const location = useLocation();
+    useEffect(() => {
+        const currentParams = new URLSearchParams(location.search);
+        const startCourse = currentParams.get('start_course');
+        if (startCourse === '1') {
+            sendTrackEvent('enrollment.email.clicked.startcourse', {});
+            // Deleting the course_start query param as it only needs to be set once
+            // whenever passed in query params.
+            currentParams.delete('start_course');
+            navigate({
+                pathname: location.pathname,
+                search: `?${currentParams.toString()}`,
+                replace: true,
+            });
+        }
+    }, [location.search]);
+    return (_jsxs(_Fragment, { children: [_jsx("div", Object.assign({ "data-learner-type": learnerType, className: "row w-100 mx-0 my-3 justify-content-between" }, { children: _jsx("div", Object.assign({ className: "col-12 col-sm-auto p-0" }, { children: _jsx("div", Object.assign({ role: "heading", "aria-level": "1", className: "h2" }, { children: title })) })) })), _jsxs("div", Object.assign({ className: "row course-outline-tab" }, { children: [_jsx(AccountActivationAlert, {}), _jsx("div", Object.assign({ className: "col-12" }, { children: _jsx(AlertList, { topic: "outline-private-alerts", customAlerts: Object.assign({}, privateCourseAlert) }) })), _jsxs("div", Object.assign({ className: "col col-12 col-md-8" }, { children: [_jsx(AlertList, { topic: "outline-course-alerts", className: "mb-3", customAlerts: Object.assign(Object.assign(Object.assign(Object.assign({}, certificateAvailableAlert), courseEndAlert), courseStartAlert), scheduledContentAlert) }), isSelfPaced && hasDeadlines && (_jsxs(_Fragment, { children: [_jsx(ShiftDatesAlert, { model: "outline", fetch: fetchOutlineTab }), _jsx(UpgradeToShiftDatesAlert, { model: "outline", logUpgradeLinkClick: logUpgradeToShiftDatesLinkClick })] })), _jsx(StartOrResumeCourseCard, {}), _jsx(WelcomeMessage, { courseId: courseId, nextElementRef: expandButtonRef }), rootCourseId && (_jsxs(_Fragment, { children: [_jsx("div", Object.assign({ id: "expand-button-row", className: "row w-100 m-0 mb-3 justify-content-end" }, { children: _jsx("div", Object.assign({ className: "col-12 col-md-auto p-0" }, { children: _jsx(Button, Object.assign({ ref: expandButtonRef, variant: "outline-primary", block: true, onClick: () => { setExpandAll(!expandAll); } }, { children: expandAll ? intl.formatMessage(messages.collapseAll) : intl.formatMessage(messages.expandAll) })) })) })), _jsx(CourseHomeSectionOutlineSlot, { expandAll: expandAll, sectionIds: courses[rootCourseId].sectionIds, sections: sections })] }))] })), rootCourseId && (_jsxs("div", Object.assign({ className: "col col-12 col-md-4" }, { children: [_jsx(ProctoringInfoPanel, {}), (!enableProctoredExams || proctoringPanelStatus === 'loaded') && weeklyLearningGoalEnabled && (_jsx(WeeklyLearningGoalCard, { daysPerWeek: selectedGoal && 'daysPerWeek' in selectedGoal ? selectedGoal.daysPerWeek : null, subscribedToReminders: selectedGoal && 'subscribedToReminders' in selectedGoal ? selectedGoal.subscribedToReminders : false })), _jsx(CourseTools, {}), _jsx(CourseOutlineTabNotificationsSlot, { courseId: courseId }), _jsx(CourseDates, {}), _jsx(CourseHandouts, {})] })))] }))] }));
+};
+export default OutlineTab;
+//# sourceMappingURL=OutlineTab.js.map

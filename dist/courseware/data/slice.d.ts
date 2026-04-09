@@ -1,0 +1,26 @@
+export const fetchCourseRequest: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchCourseRequest">;
+export const fetchCourseSuccess: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchCourseSuccess">;
+export const fetchCourseFailure: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchCourseFailure">;
+export const fetchCourseDenied: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchCourseDenied">;
+export const fetchSequenceRequest: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchSequenceRequest">;
+export const fetchSequenceSuccess: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchSequenceSuccess">;
+export const fetchSequenceFailure: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchSequenceFailure">;
+export const fetchCourseRecommendationsRequest: any;
+export const fetchCourseRecommendationsSuccess: any;
+export const fetchCourseRecommendationsFailure: any;
+export const fetchCourseOutlineRequest: import("@reduxjs/toolkit").ActionCreatorWithoutPayload<"courseware/fetchCourseOutlineRequest">;
+export const fetchCourseOutlineSuccess: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/fetchCourseOutlineSuccess">;
+export const fetchCourseOutlineFailure: import("@reduxjs/toolkit").ActionCreatorWithoutPayload<"courseware/fetchCourseOutlineFailure">;
+export const setCoursewareOutlineSidebarToggles: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/setCoursewareOutlineSidebarToggles">;
+export const updateCourseOutlineCompletion: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "courseware/updateCourseOutlineCompletion">;
+export const reducer: import("redux").Reducer<{
+    courseId: null;
+    courseStatus: string;
+    sequenceId: null;
+    sequenceMightBeUnit: boolean;
+    sequenceStatus: string;
+    courseOutline: {};
+    coursewareOutlineSidebarSettings: {};
+    courseOutlineStatus: string;
+    courseOutlineShouldUpdate: boolean;
+}, import("redux").AnyAction>;

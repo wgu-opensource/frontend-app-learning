@@ -1,0 +1,1 @@
+{"version":3,"file":"messages.js","sourceRoot":"","sources":["../../../src/alerts/logistration-alert/messages.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,6BAA6B,CAAC;AAE7D,MAAM,QAAQ,GAAG,cAAc,CAAC;IAC9B,2BAA2B,EAAE;QAC3B,EAAE,EAAE,gCAAgC;QACpC,cAAc,EAAE,8CAA8C;QAC9D,WAAW,EAAE,0EAA0E;KACxF;CACF,CAAC,CAAC;AAEH,eAAe,QAAQ,CAAC"}

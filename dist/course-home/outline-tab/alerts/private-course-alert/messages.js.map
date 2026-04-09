@@ -1,0 +1,1 @@
+{"version":3,"file":"messages.js","sourceRoot":"","sources":["../../../../../src/course-home/outline-tab/alerts/private-course-alert/messages.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,6BAA6B,CAAC;AAE7D,MAAM,QAAQ,GAAG,cAAc,CAAC;IAC9B,QAAQ,EAAE;QACR,EAAE,EAAE,cAAc;QAClB,cAAc,EAAE,6BAA6B;QAC7C,WAAW,EAAE,sGAAsG;cAC/G,mFAAmF;KACxF;CACF,CAAC,CAAC;AAEH,eAAe,QAAQ,CAAC"}

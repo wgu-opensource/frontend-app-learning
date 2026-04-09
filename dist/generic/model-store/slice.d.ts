@@ -1,0 +1,9 @@
+export const addModel: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/addModel">;
+export const addModels: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/addModels">;
+export const addModelsMap: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/addModelsMap">;
+export const updateModel: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/updateModel">;
+export const updateModels: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/updateModels">;
+export const updateModelsMap: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/updateModelsMap">;
+export const removeModel: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/removeModel">;
+export const removeModels: import("@reduxjs/toolkit").ActionCreatorWithPayload<any, "models/removeModels">;
+export const reducer: import("redux").Reducer<{}, import("redux").AnyAction>;

@@ -1,0 +1,22 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import PropTypes from 'prop-types';
+import { getLocale, isRtl, useIntl } from '@edx/frontend-platform/i18n';
+import { useContextId } from '../../../../data/hooks';
+import { useModel } from '../../../../generic/model-store';
+import CurrentGradeTooltip from './CurrentGradeTooltip';
+import PassingGradeTooltip from './PassingGradeTooltip';
+import messages from '../messages';
+const GradeBar = ({ passingGrade }) => {
+    const intl = useIntl();
+    const courseId = useContextId();
+    const { courseGrade: { isPassing, percent, }, gradesFeatureIsFullyLocked, } = useModel('progress', courseId);
+    const currentGrade = Number((percent * 100).toFixed(0));
+    const lockedTooltipClassName = gradesFeatureIsFullyLocked ? 'locked-overlay' : '';
+    const adjustedRtlStyle = (percentOffest) => (isRtl(getLocale()) ? { transform: `translateX(${100 - percentOffest}%)` } : {});
+    return (_jsxs("div", Object.assign({ className: "col-12 col-sm-6 align-self-center p-0" }, { children: [_jsx("div", Object.assign({ className: "sr-only" }, { children: intl.formatMessage(messages.courseGradeBarAltText, { currentGrade, passingGrade }) })), _jsxs("svg", Object.assign({ width: "100%", height: "100px", className: "grade-bar", "aria-hidden": "true" }, { children: [_jsxs("g", Object.assign({ style: { transform: 'translateY(2.61em)' } }, { children: [_jsx("rect", { className: "grade-bar__base", width: "100%" }), _jsx("rect", { className: "grade-bar--passing", width: `${passingGrade}%`, style: adjustedRtlStyle(passingGrade) }), _jsx("rect", { className: `grade-bar--current-${isPassing ? 'passing' : 'non-passing'}`, width: `${currentGrade}%`, style: adjustedRtlStyle(currentGrade) }), _jsx("rect", { className: "grade-bar__divider" }), _jsx("rect", { className: "grade-bar__divider", x: "99.7%" })] })), _jsx(PassingGradeTooltip, { passingGrade: passingGrade, tooltipClassName: lockedTooltipClassName }), _jsx(CurrentGradeTooltip, { tooltipClassName: lockedTooltipClassName })] }))] })));
+};
+GradeBar.propTypes = {
+    passingGrade: PropTypes.number.isRequired,
+};
+export default GradeBar;
+//# sourceMappingURL=GradeBar.js.map

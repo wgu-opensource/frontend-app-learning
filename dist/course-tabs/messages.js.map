@@ -1,0 +1,1 @@
+{"version":3,"file":"messages.js","sourceRoot":"","sources":["../../src/course-tabs/messages.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,6BAA6B,CAAC;AAE7D,MAAM,QAAQ,GAAG,cAAc,CAAC;IAC9B,cAAc,EAAE;QACd,EAAE,EAAE,oCAAoC;QACxC,cAAc,EAAE,iBAAiB;QACjC,WAAW,EAAE,iDAAiD;KAC/D;CACF,CAAC,CAAC;AAEH,eAAe,QAAQ,CAAC"}

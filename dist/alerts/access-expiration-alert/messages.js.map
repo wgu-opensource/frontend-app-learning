@@ -1,0 +1,1 @@
+{"version":3,"file":"messages.js","sourceRoot":"","sources":["../../../src/alerts/access-expiration-alert/messages.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,6BAA6B,CAAC;AAE7D,MAAM,QAAQ,GAAG,cAAc,CAAC;IAC9B,UAAU,EAAE;QACV,EAAE,EAAE,sCAAsC;QAC1C,cAAc,EAAE,aAAa;QAC7B,WAAW,EAAE,wCAAwC;KACtD;CACF,CAAC,CAAC;AAEH,eAAe,QAAQ,CAAC"}

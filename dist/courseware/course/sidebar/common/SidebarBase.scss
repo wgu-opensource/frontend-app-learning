@@ -1,0 +1,6 @@
+#course-sidebar {
+    @media (--pgn-size-breakpoint-max-width-lg) {
+        overflow-y: scroll;
+        padding: 0 .625rem !important;
+    }
+}

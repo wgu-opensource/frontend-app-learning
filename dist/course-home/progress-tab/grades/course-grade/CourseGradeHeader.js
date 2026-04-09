@@ -1,0 +1,42 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { sendTrackEvent } from '@edx/frontend-platform/analytics';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
+import { useIntl } from '@edx/frontend-platform/i18n';
+import { Locked } from '@openedx/paragon/icons';
+import { Button, Icon } from '@openedx/paragon';
+import { useContextId } from '../../../../data/hooks';
+import { useModel } from '../../../../generic/model-store';
+import messages from '../messages';
+const CourseGradeHeader = () => {
+    const intl = useIntl();
+    const courseId = useContextId();
+    const { org, } = useModel('courseHomeMeta', courseId);
+    const { verifiedMode, gradesFeatureIsFullyLocked, } = useModel('progress', courseId);
+    const eventProperties = {
+        org_key: org,
+        courserun_key: courseId,
+    };
+    const { administrator } = getAuthenticatedUser();
+    const logUpgradeButtonClick = () => {
+        sendTrackEvent('edx.ui.lms.course_progress.grades_upgrade.clicked', {
+            org_key: org,
+            courserun_key: courseId,
+            is_staff: administrator,
+        });
+        sendTrackEvent('edx.bi.ecommerce.upsell_links_clicked', Object.assign(Object.assign({}, eventProperties), { linkCategory: '(none)', linkName: 'progress_locked', linkType: 'button', pageName: 'progress' }));
+    };
+    let previewText;
+    if (verifiedMode) {
+        previewText = gradesFeatureIsFullyLocked
+            ? intl.formatMessage(messages.courseGradePreviewUnlockCertificateBody)
+            : intl.formatMessage(messages.courseGradePartialPreviewUnlockCertificateBody);
+    }
+    else {
+        previewText = intl.formatMessage(messages.courseGradePreviewUpgradeDeadlinePassedBody);
+    }
+    return (_jsxs("div", Object.assign({ id: "grade-course-header", className: "row w-100 m-0 p-4 rounded-top bg-primary-500 text-white" }, { children: [_jsxs("div", Object.assign({ className: `col-12 ${verifiedMode ? 'col-md-9' : ''} p-0` }, { children: [_jsxs("div", Object.assign({ className: "row w-100 m-0 p-0" }, { children: [_jsx("div", Object.assign({ className: "col-1 p-0" }, { children: _jsx(Icon, { src: Locked }) })), _jsxs("div", Object.assign({ className: "col-11 px-2 p-sm-0 h4 text-white" }, { children: [_jsx("span", Object.assign({ "aria-hidden": "true" }, { children: intl.formatMessage(messages.courseGradePreviewHeaderAriaHidden) })), gradesFeatureIsFullyLocked
+                                        ? intl.formatMessage(messages.courseGradePreviewHeaderLocked)
+                                        : intl.formatMessage(messages.courseGradePreviewHeaderLimited)] }))] })), _jsx("div", Object.assign({ className: "row w-100 m-0 p-0 justify-content-end" }, { children: _jsx("div", Object.assign({ className: "col-11 px-2 p-sm-0 small" }, { children: previewText })) }))] })), verifiedMode && (_jsx("div", Object.assign({ className: "col-12 col-md-3 mt-3 mt-md-0 p-0 align-self-center text-right" }, { children: _jsx(Button, Object.assign({ id: "upgrade-button", variant: "brand", size: "sm", href: verifiedMode.upgradeUrl, onClick: logUpgradeButtonClick }, { children: intl.formatMessage(messages.courseGradePreviewUpgradeButton) })) })))] })));
+};
+export default CourseGradeHeader;
+//# sourceMappingURL=CourseGradeHeader.js.map

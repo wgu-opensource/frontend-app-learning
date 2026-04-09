@@ -1,0 +1,34 @@
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import PropTypes from 'prop-types';
+import classNames from 'classnames';
+import { useIntl } from '@edx/frontend-platform/i18n';
+import { Button, Icon } from '@openedx/paragon';
+import { ChevronRight as ChevronRightIcon } from '@openedx/paragon/icons';
+import courseOutlineMessages from '@src/course-home/outline-tab/messages';
+import CompletionIcon from './CompletionIcon';
+import { useCourseOutlineSidebar } from '../hooks';
+const SidebarSection = ({ section, handleSelectSection }) => {
+    const intl = useIntl();
+    const { id, complete, title, sequenceIds, completionStat, } = section;
+    const { activeSequenceId, isEnabledCompletionTracking } = useCourseOutlineSidebar();
+    const isActiveSection = sequenceIds.includes(activeSequenceId);
+    const sectionTitle = (_jsxs(_Fragment, { children: [_jsx("div", Object.assign({ className: "col-auto p-0" }, { children: _jsx(CompletionIcon, { completionStat: completionStat, enabled: isEnabledCompletionTracking }) })), _jsxs("div", Object.assign({ className: "col-10 ml-3 p-0 flex-grow-1 text-dark-500 text-left text-break" }, { children: [title, isEnabledCompletionTracking && (_jsxs("span", Object.assign({ className: "sr-only" }, { children: [", ", intl.formatMessage(complete
+                                ? courseOutlineMessages.completedSection
+                                : courseOutlineMessages.incompleteSection)] })))] }))] }));
+    return (_jsx("li", Object.assign({ className: "mb-2 course-sidebar-section" }, { children: _jsxs(Button, Object.assign({ variant: "tertiary", className: classNames('d-flex align-items-center w-100 px-4 py-3.5 rounded-0 justify-content-start', { 'bg-info-100': isActiveSection }), onClick: () => handleSelectSection(id) }, { children: [sectionTitle, _jsx(Icon, { src: ChevronRightIcon })] })) })));
+};
+SidebarSection.propTypes = {
+    section: PropTypes.shape({
+        complete: PropTypes.bool,
+        id: PropTypes.string,
+        title: PropTypes.string,
+        sequenceIds: PropTypes.arrayOf(PropTypes.string),
+        completionStat: PropTypes.shape({
+            completed: PropTypes.number,
+            total: PropTypes.number,
+        }),
+    }).isRequired,
+    handleSelectSection: PropTypes.func.isRequired,
+};
+export default SidebarSection;
+//# sourceMappingURL=SidebarSection.js.map
