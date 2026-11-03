@@ -1,0 +1,1 @@
+{"version":3,"file":"constants.js","names":["ID","exports"],"sources":["../../../../../../src/courseware/course/sidebar/sidebars/course-outline/constants.js"],"sourcesContent":["// eslint-disable-next-line import/prefer-default-export\nexport const ID = 'COURSE_OUTLINE';\n"],"mappings":";;;;;;AAAA;AACO,MAAMA,EAAE,GAAAC,OAAA,CAAAD,EAAA,GAAG,gBAAgB","ignoreList":[]}
