@@ -99,6 +99,18 @@ Object.defineProperty(exports, "modelsReducer", {
     return _modelStore.reducer;
   }
 });
+Object.defineProperty(exports, "pluginsReducer", {
+  enumerable: true,
+  get: function () {
+    return _pluginStore.reducer;
+  }
+});
+Object.defineProperty(exports, "registerOverrideMethod", {
+  enumerable: true,
+  get: function () {
+    return _pluginStore.registerOverrideMethod;
+  }
+});
 Object.defineProperty(exports, "saveSequencePosition", {
   enumerable: true,
   get: function () {
@@ -141,5 +153,6 @@ var _UserMessagesProvider = _interopRequireDefault(require("./generic/user-messa
 var _AlertList = _interopRequireDefault(require("./generic/user-messages/AlertList"));
 var _decodePageRoute = _interopRequireDefault(require("./decode-page-route"));
 var _utils2 = _interopRequireDefault(require("./courseware/utils"));
+var _pluginStore = require("./generic/plugin-store");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 //# sourceMappingURL=exports.js.map

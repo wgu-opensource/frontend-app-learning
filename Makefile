@@ -8,11 +8,16 @@ transifex_temp = ./temp/babel-plugin-formatjs
 
 build:
 	rm -rf ./dist
-	./node_modules/.bin/fedx-scripts babel src --out-dir dist --source-maps --ignore **/*.test.jsx,**/__mocks__,**/__snapshots__,**/setupTest.js --copy-files
-	@# --copy-files will bring in everything else that wasn't processed by babel. Remove what we don't want.
-	@rm -rf dist/**/*.test.jsx
-	@rm -rf dist/**/__snapshots__
-	@rm -rf dist/__mocks__
+	./node_modules/.bin/fedx-scripts babel src --out-dir dist --source-maps \
+		--extensions ".js,.jsx,.ts,.tsx" --out-file-extension ".js" \
+		--config-file ./babel.build.config.js \
+		--ignore "**/*.test.js,**/*.test.jsx,**/*.test.ts,**/*.test.tsx,**/__mocks__,**/__snapshots__,**/setupTest.js" \
+		--copy-files
+	@# --copy-files brings in non-code assets babel didn't process. Remove only true test artifacts.
+	@# NOTE: keep __factories__ and __mocks__ — testExports.js (the shipped ./tests entry) imports them.
+	@find dist \( -name '*.test.*' -o -name 'setupTest.*' \) -delete
+	@find dist -type d \( -name '__snapshots__' -o -name 'pact-tests' \) -prune -exec rm -rf {} +
+	@find dist \( -name '*.ts' -o -name '*.tsx' \) ! -name '*.d.ts' -delete
 
 precommit:
 	npm run lint

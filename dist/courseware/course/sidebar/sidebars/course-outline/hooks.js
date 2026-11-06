@@ -6,9 +6,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.useCourseOutlineSidebar = void 0;
 var _react = require("react");
 var _reactRedux = require("react-redux");
-var _modelStore = require("@src/generic/model-store");
-var _SidebarContext = _interopRequireDefault(require("@src/courseware/course/sidebar/SidebarContext"));
-var _selectors = require("@src/courseware/data/selectors");
+var _modelStore = require("../../../../../generic/model-store");
+var _SidebarContext = _interopRequireDefault(require("../../SidebarContext"));
+var _selectors = require("../../../../data/selectors");
 var _constants = require("./constants");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 // eslint-disable-next-line import/prefer-default-export

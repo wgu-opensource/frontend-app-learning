@@ -11,9 +11,9 @@ var _reactRedux = require("react-redux");
 var _lodash = require("lodash");
 var _reactUnitTestUtils = require("@edx/react-unit-test-utils");
 var _logging = require("@edx/frontend-platform/logging");
-var _data = require("@src/courseware/data");
-var _thunks = require("@src/course-home/data/thunks");
-var _hooks = require("@src/generic/hooks");
+var _data = require("../../../../data");
+var _thunks = require("../../../../../course-home/data/thunks");
+var _hooks = require("../../../../../generic/hooks");
 var _constants = require("../constants");
 var _useLoadBearingHook = _interopRequireDefault(require("./useLoadBearingHook"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }

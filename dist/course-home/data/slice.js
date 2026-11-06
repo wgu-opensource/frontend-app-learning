@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.setShowSearch = exports.setCallToActionToast = exports.reducer = exports.fetchTabSuccess = exports.fetchTabRequest = exports.fetchTabFailure = exports.fetchTabDenied = exports.fetchProctoringInfoResolved = void 0;
 var _toolkit = require("@reduxjs/toolkit");
-var _constants = require("@src/constants");
+var _constants = require("../../constants");
 /* eslint-disable no-param-reassign */
 
 const slice = (0, _toolkit.createSlice)({

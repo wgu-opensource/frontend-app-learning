@@ -10,8 +10,8 @@ var _reactRedux = require("react-redux");
 var _i18n = require("@edx/frontend-platform/i18n");
 var _paragon = require("@openedx/paragon");
 var _icons = require("@openedx/paragon/icons");
-var _messages = _interopRequireDefault(require("@src/course-home/outline-tab/messages"));
-var _selectors = require("@src/courseware/data/selectors");
+var _messages = _interopRequireDefault(require("../../../../../../course-home/outline-tab/messages"));
+var _selectors = require("../../../../../data/selectors");
 var _CompletionIcon = _interopRequireDefault(require("./CompletionIcon"));
 var _jsxRuntime = require("react/jsx-runtime");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }

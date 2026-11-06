@@ -10,7 +10,7 @@ var _react2 = require("@edx/frontend-platform/react");
 var _reactUnitTestUtils = require("@edx/react-unit-test-utils");
 var _paragon = require("@openedx/paragon");
 var _frontendPluginFramework = require("@openedx/frontend-plugin-framework");
-var _PageLoading = _interopRequireDefault(require("@src/generic/PageLoading"));
+var _PageLoading = _interopRequireDefault(require("../../../../generic/PageLoading"));
 var hooks = _interopRequireWildcard(require("./hooks"));
 var _jsxRuntime = require("react/jsx-runtime");
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }

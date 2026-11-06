@@ -46,3 +46,8 @@ export {
   DecodePageRoute,
   withParamsAndNavigation,
 };
+
+export {
+  reducer as pluginsReducer,
+  registerOverrideMethod,
+} from './generic/plugin-store';

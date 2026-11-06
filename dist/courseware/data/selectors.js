@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getSequenceId = exports.getCoursewareOutlineSidebarSettings = exports.getCourseOutlineStatus = exports.getCourseOutlineShouldUpdate = exports.getCourseOutline = void 0;
 exports.sequenceIdsSelector = sequenceIdsSelector;
-var _constants = require("@src/constants");
+var _constants = require("../../constants");
 function sequenceIdsSelector(state) {
   if (state.courseware.courseStatus !== _constants.LOADED) {
     return [];

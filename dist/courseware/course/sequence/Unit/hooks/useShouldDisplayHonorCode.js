@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.stateKeys = exports.default = void 0;
 var _react = _interopRequireDefault(require("react"));
 var _dist = require("@edx/react-unit-test-utils/dist");
-var _modelStore = require("@src/generic/model-store");
+var _modelStore = require("../../../../../generic/model-store");
 var _constants = require("../constants");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 const stateKeys = exports.stateKeys = (0, _dist.StrictDict)({

@@ -9,7 +9,7 @@ var _reactRedux = require("react-redux");
 var _propTypes = _interopRequireDefault(require("prop-types"));
 var _frontendLibLearningAssistant = require("@edx/frontend-lib-learning-assistant");
 var _i18n = require("@edx/frontend-platform/i18n");
-var _constants = require("@src/constants");
+var _constants = require("../../../constants");
 var _modelStore = require("../../../generic/model-store");
 var _jsxRuntime = require("react/jsx-runtime");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
